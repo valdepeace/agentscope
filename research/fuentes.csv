@@ -1,0 +1,50 @@
+id,organizacion,artefacto,url,ruta,evidencia,version,consulta,nota
+codex,OpenAI,Codex CLI,https://github.com/openai/codex/blob/main/codex-rs/models-manager/prompt.md,codex-rs/models-manager/prompt.md,A,main sin SHA,2026-10-25,prompt publicado parcial
+gemini,Google,Gemini CLI,https://github.com/google-gemini/gemini-cli/blob/main/packages/core/src/core/prompts.ts,packages/core/src/core/prompts.ts,A,main sin SHA,2026-10-25,PromptProvider
+opencode,SST,OpenCode,https://github.com/anomalyco/opencode/blob/dev/packages/opencode/src/session/system.ts,packages/opencode/src/session/system.ts,A,dev sin SHA,2026-10-25,Constructor dinámico
+qwen,Alibaba,Qwen Code,https://github.com/QwenLM/qwen-code,packages/core/src/core/prompts.ts,A,main sin SHA,2026-10-25,Override y subagentes
+kimi,Moonshot,Kimi Code,https://github.com/MoonshotAI/kimi-code,README/docs,A/B,main sin SHA,2026-10-25,CLI oficial
+superpowers,obra,Subagent skill,https://github.com/obra/superpowers/blob/main/skills/subagent-driven-development/SKILL.md,skills/subagent-driven-development/SKILL.md,C,main sin SHA,2026-10-25,Metodología
+verified,OpenAI,SWE-bench Verified,https://openai.com/index/introducing-swe-bench-verified/,anuncio,B,web,2026-10-25,500 tareas
+qwen-model,Alibaba,Qwen3-Coder-Next,https://huggingface.co/Qwen/Qwen3-Coder-Next,model card,B,rolling,2026-10-25,Licencia y contexto según model card
+claude,Anthropic,Claude model overview,https://platform.claude.com/docs/en/models/overview,docs,B,rolling,2026-10-25,IDs/contexto/precio variables
+claude_code,Anthropic,Claude Code,https://docs.anthropic.com/en/docs/claude-code/overview,product docs,B,rolling,2026-10-25,prompt principal no publicado/verificado
+cline,Cline,Cline CLI,https://github.com/cline/cline/blob/main/apps/cli/src/runtime/prompt.ts,apps/cli/src/runtime/prompt.ts,A,main sin SHA,2026-10-25,prompt builder CLI
+roo,Roo Code,Roo Code,https://github.com/RooCodeInc/Roo-Code/blob/main/src/core/prompts/system.ts,src/core/prompts/system.ts,A,repo archivado,2026-10-25,prompt dinámico
+openhands,All-Hands AI,OpenHands SDK,https://github.com/OpenHands/software-agent-sdk/blob/main/openhands-sdk/openhands/sdk/event/llm_convertible/system.py,SDK system event,A,main sin SHA,2026-10-25,SDK no equivale a todo producto
+sweagent,Princeton,SWE-agent,https://github.com/SWE-agent/SWE-agent/blob/main/sweagent/agent/agents.py,sweagent/agent/agents.py,A,main sin SHA,2026-10-25,plantillas de mensajes
+aider,Aider,Aider,https://github.com/Aider-AI/aider/blob/main/aider/coders/architect_prompts.py,aider/coders/architect_prompts.py,A,main sin SHA,2026-10-25,architect/editor prompts
+continue,Continue,Continue,https://github.com/continuedev/continue/blob/main/core/llm/defaultSystemMessages.ts,core/llm/defaultSystemMessages.ts,A,main sin SHA,2026-10-25,chat/agent/plan
+crush,Charmbracelet,Crush,https://github.com/charmbracelet/crush/blob/main/internal/agent/agent.go,internal/agent/agent.go,A,main sin SHA,2026-10-25,agent runtime
+mastra,Mastra,Mastra Code UI,https://github.com/mastra-ai/mastra-code-ui,README/repo,A/B,main sin SHA,2026-10-25,separar producto de framework
+cursor,Anysphere,Cursor tools,https://docs.cursor.com/en/agent/tools,agent tools docs,B,rolling,2026-10-25,documentación de tools
+qwen_prompt,Alibaba,Qwen Code prompt,https://github.com/QwenLM/qwen-code/blob/main/packages/core/src/core/prompts.ts,packages/core/src/core/prompts.ts,A,main sin SHA,2026-10-25,prompt y subagentes
+minimax,MiniMax,MCode,https://github.com/MiniMax-AI/minimax-code,repo README,A/B,main sin SHA,2026-10-25,CLI MCode
+trae,ByteDance,Trae Agent,https://github.com/bytedance/trae-agent,repo README,A/B,main sin SHA,2026-10-25,no confundir con IDE Trae
+zcode,Z.ai/Zhipu,ZCode,https://github.com/zai-org/ZCode,repo/apps/zcode-cli,A,main sin SHA,2026-10-25,harness oficial
+comate,Baidu,Baidu Comate,https://comate.baidu.com/,product docs,B,rolling,2026-10-25,sin runtime público localizado
+deepseek,DeepSeek,DeepSeek Harness,https://www.deepseek.com/en/harness/,product page,B,preview,2026-10-25,repo oficial pendiente localizar
+doubao,ByteDance,Seed2.0 cookbook,https://github.com/ByteDance-Seed/Seed2.0,README/examples,B,main sin SHA,2026-10-25,familia de modelo/API no agente
+hunyuan,Tencent,Hunyuan docs,https://cloud.tencent.com/document/product/1729,product docs,B,rolling,2026-10-25,no coding harness confirmado
+mimo,Xiaomi,MiMo Code,https://github.com/XiaomiMiMo/MiMo-Code,repo README,A/B,main sin SHA,2026-10-25,separar de forks comunitarios
+goose,Block,Goose,https://github.com/block/goose,repo,pending,main sin SHA,2026-10-25,ruta de prompt pendiente
+zed,Zed Industries,Zed Agent,https://github.com/zed-industries/zed/blob/main/crates/agent/src/agent.rs,crates/agent/src/agent.rs,A,main sin SHA,2026-10-25,código de agente nativo
+devin,Cognition,Devin,https://docs.devin.ai/,product docs,B,rolling,2026-10-25,prompt/harness no público
+windsurf,Cognition,Windsurf,https://docs.windsurf.com/,product docs,E,rolling,2026-10-25,prompt/harness no verificados
+
+qwen-a2a,Qwen,Qwen Code session multi-agent,https://github.com/QwenLM/qwen-code/blob/main/docs/design/2026-10-05-session-multi-agent.md,docs/design/2026-10-05-session-multi-agent.md,A,main sin SHA,2026-10-25,Nota oficial marca A2A implementado en PR #13467/#13583 con experimental.agentCollaboration desactivado por defecto
+qwen-a2a-release,Qwen,Qwen Code weekly update,https://qwenlm.github.io/qwen-code-docs/en/blog/updates/weekly-update-2026-10-15/,weekly-update-2026-10-15,A,publicado 2026-10-15,2026-10-25,Actualización oficial anuncia colaboración con Claude Code y Codex como compañeros
+a2a-spec,A2A Project,Agent2Agent Protocol Specification,https://github.com/a2aproject/A2A/blob/main/docs/specification.md,docs/specification.md,A,main sin SHA,2026-10-25,Agent Card tasks auth and protocol scope; explicitly excludes internal subagent/tool invocation
+qwen-a2a-contract,Qwen,Qwen Code frozen external A2A contract,https://github.com/QwenLM/qwen-code/blob/main/docs/design/2026-09-09-a2a-frozen-contract.md,docs/design/2026-09-09-a2a-frozen-contract.md,A,main sin SHA,2026-10-25,Implemented contract; JSONRPC only and cross-implementation interoperability not demonstrated
+acp-intro,Agent Client Protocol,ACP introduction,https://agentclientprotocol.com/get-started/introduction,introduction,A,rolling,2026-10-25,Editor/IDE to coding agent protocol; local stdio and remote work in progress
+mcp-architecture,Model Context Protocol,MCP core architecture,https://github.com/modelcontextprotocol/docs/blob/main/docs/concepts/architecture.mdx,docs/concepts/architecture.mdx,A,main sin SHA,2026-10-25,Host/client/server pattern for tools context and prompts
+gemini-a2a-server,Gemini CLI,Experimental A2A server package,https://github.com/google-gemini/gemini-cli/tree/main/packages/a2a-server,packages/a2a-server,A,main sin SHA,2026-10-25,Server package exists; issue #14535 says original implementation is A2A-like and not fully spec-conformant
+gemini-a2a-conformance,Gemini CLI,Issue requesting full A2A server support,https://github.com/google-gemini/gemini-cli/issues/14535,issue #14535,B,closed 2026-05-15,2026-10-25,Issue body describes partial conformance; closure has no linked PR in issue page and does not itself establish conformance
+hermes-a2a,Hermes Agent,A2A platform plugin README,https://github.com/NousResearch/hermes-agent/blob/main/plugins/platforms/a2a/README.md,plugins/platforms/a2a/README.md,A,main sin SHA,2026-10-25,First-party plugin claims A2A 1.0 inbound/outbound; configuration-gated
+hermes-a2a-cli,Hermes Agent,Fix plugin tools registration in CLI/TUI,https://github.com/NousResearch/hermes-agent/pull/86660,PR #86660,A,merged 2026-08-15,2026-10-25,Merged fix makes outbound A2A tools available in CLI/TUI; PR reports 181 tests and E2E validation
+zed-acp-registry,Zed,ACP registry of compatible agents,https://zed.dev/acp,ACP registry,B,rolling,2026-10-25,Shows wide editor-agent integration but is ACP evidence, not A2A
+codebuddy-a2a,Tencent CodeBuddy,CodeBuddy Code A2A release v2.143,https://www.codebuddy.ai/docs/cli/release-notes/v2.143.0,CLI release v2.143,A,product docs,2026-10-25,Release announces A2A client and --a2a stdio service; product documentation not source audit
+codebuddy-a2a-cli,Tencent CodeBuddy,CLI --a2a reference,https://www.codebuddy.ai/docs/cli/cli-reference,CLI reference,A,rolling,2026-10-25,Documents JSON-RPC over stdio and supported task operations
+codebuddy-a2a-mixed,Tencent CodeBuddy,CodeBuddy Code A2A release v2.145,https://www.codebuddy.ai/docs/cli/release-notes/v2.145.0,CLI release v2.145,A,product docs,2026-10-25,Documents mixed A2A and stream-json sessions and task input waiting
+openclaw-a2a,OpenClaw,A2A channel plugin,https://docs.openclaw.ai/channels/a2a,channel docs,B,rolling,2026-10-25,Generic agent gateway; A2A 1.0 JSON-RPC inbound/outbound with explicit limitations
+openclaw-a2a-release,OpenClaw,A2A channel release notes,https://docs.openclaw.ai/releases/2026.8.1/messaging,release v2026.8.1,B,2026.8.1,2026-10-25,Describes first A2A version limits and trust model

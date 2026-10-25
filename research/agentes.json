@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "consulted": "2026-10-25",
+  "agents": [
+    {"id":"claude-code","organization":"Anthropic","status":"proprietary","source":"https://github.com/anthropics/claude-code","prompt_evidence":"E","notes":"principal prompt not verified"},
+    {"id":"codex-cli","organization":"OpenAI","status":"official-open-source","source":"https://github.com/openai/codex","prompt_evidence":"A","notes":"partial prompt and AGENTS loader"},
+    {"id":"opencode","organization":"SST","status":"open-source","source":"https://github.com/anomalyco/opencode","prompt_evidence":"A","notes":"dynamic system builder"},
+    {"id":"crush","organization":"Charmbracelet","status":"open-source","source":"https://github.com/charmbracelet/crush","prompt_evidence":"A","notes":"prompts.go/templates; SHA pending"},
+    {"id":"mastra-code","organization":"Mastra","status":"scope-pending","source":"https://github.com/mastra-ai/mastra-code-ui","prompt_evidence":"B","notes":"distinguish framework and desktop"},
+    {"id":"gemini-cli","organization":"Google","status":"official-open-source","source":"https://github.com/google-gemini/gemini-cli","prompt_evidence":"A","notes":"PromptProvider and override docs"},
+    {"id":"aider","organization":"Aider","status":"open-source","source":"https://github.com/Aider-AI/aider","prompt_evidence":"A","notes":"architect/editor prompts"},
+    {"id":"cline","organization":"Cline","status":"open-source","source":"https://github.com/cline/cline","prompt_evidence":"A","notes":"CLI prompt builder"},
+    {"id":"roo-code","organization":"Roo Code","status":"archived-open-source","source":"https://github.com/RooCodeInc/Roo-Code","prompt_evidence":"A","notes":"archived repo"},
+    {"id":"openhands","organization":"All-Hands AI","status":"open-source","source":"https://github.com/OpenHands/software-agent-sdk","prompt_evidence":"A","notes":"SDK only"},
+    {"id":"swe-agent","organization":"Princeton/community","status":"research-open-source","source":"https://github.com/SWE-agent/SWE-agent","prompt_evidence":"A","notes":"templated harness"},
+    {"id":"continue","organization":"Continue","status":"open-source","source":"https://github.com/continuedev/continue","prompt_evidence":"A","notes":"agent/plan/chat messages"},
+    {"id":"goose","organization":"Block","status":"open-source","source":"https://github.com/block/goose","prompt_evidence":"E","notes":"route audit pending"},
+    {"id":"cursor","organization":"Anysphere","status":"proprietary","source":"https://docs.cursor.com/","prompt_evidence":"B","notes":"tools docs; prompt unavailable"},
+    {"id":"windsurf","organization":"Cognition","status":"proprietary","source":"https://docs.windsurf.com/","prompt_evidence":"E","notes":"runtime not verified"},
+    {"id":"devin","organization":"Cognition","status":"proprietary","source":"https://docs.devin.ai/","prompt_evidence":"E","notes":"runtime not verified"},
+    {"id":"zed-agent","organization":"Zed Industries","status":"open-source-client","source":"https://github.com/zed-industries/zed","prompt_evidence":"A","notes":"native agent and ACP integrations"},
+    {"id":"qwen-code","organization":"Alibaba/Qwen","status":"official-open-source","source":"https://github.com/QwenLM/qwen-code","prompt_evidence":"A","notes":"prompt, QWEN.md, subagents"},
+    {"id":"kimi-code","organization":"Moonshot AI","status":"official-open-source","source":"https://github.com/MoonshotAI/kimi-code","prompt_evidence":"A/B","notes":"subagents advertised"},
+    {"id":"minimax-code","organization":"MiniMax","status":"official-open-source","source":"https://github.com/MiniMax-AI/minimax-code","prompt_evidence":"A/B","notes":"MCode; route audit pending"},
+    {"id":"trae-agent","organization":"ByteDance","status":"official-research","source":"https://github.com/bytedance/trae-agent","prompt_evidence":"A/B","notes":"not Trae IDE"},
+    {"id":"deepseek-harness","organization":"DeepSeek","status":"preview-unverified-repo","source":"https://www.deepseek.com/en/harness/","prompt_evidence":"B/E","notes":"official page; source path unknown"},
+    {"id":"zcode","organization":"Z.ai/Zhipu","status":"official-open-source","source":"https://github.com/zai-org/ZCode","prompt_evidence":"A","notes":"CLI source present"},
+    {"id":"baidu-comate","organization":"Baidu","status":"official-proprietary","source":"https://comate.baidu.com/","prompt_evidence":"B/E","notes":"product docs, no runtime"},
+    {"id":"doubao","organization":"ByteDance","status":"model-family","source":"https://github.com/ByteDance-Seed/Seed2.0","prompt_evidence":"B","notes":"cookbook, no official CLI confirmed"},
+    {"id":"hunyuan-codebuddy","organization":"Tencent","status":"unverified-agent","source":"https://cloud.tencent.com/document/product/1729","prompt_evidence":"E","notes":"no Hunyuan harness verified"},
+    {"id":"mimo-code","organization":"Xiaomi","status":"official-open-source","source":"https://github.com/XiaomiMiMo/MiMo-Code","prompt_evidence":"A/B","notes":"separate from community forks"}
+  ]
+}
