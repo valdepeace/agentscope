@@ -4,6 +4,8 @@ Lectura de solo lectura (2026-11-21) de nueve orquestadores de agentes: quién d
 
 **Confianza.** La lectura línea a línea cubre entre el 0,2 % y el 32 % de cada repositorio. Los recuentos de tamaño y los grafos de imports cubren todos los ficheros; el comportamiento, solo lo leído. Un «no encontrado» significa «no encontrado en lo leído». Las citas `ruta:línea` de las notas iniciales se reverificaron por muestreo (807 únicas, 72 muestreadas, ninguna contradicha); las de las notas de arquitectura y mantenibilidad (`study/arquitectura/`, `study/mantenibilidad/`) **no se han verificado por muestreo**.
 
+**Versión visual:** un diagrama interactivo por orquestador en [orquestacion.html](https://valdepeace.github.io/agentscope/orquestacion.html) (comprobaciones automáticas; sin revisión a ojo).
+
 ## Por dónde empezar
 
 | Quiero | Leer |
