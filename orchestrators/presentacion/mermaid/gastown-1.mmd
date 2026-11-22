@@ -1,0 +1,30 @@
+flowchart TB
+    Human["Humano (Overseer)"]
+    Daemon["Daemon Go (determinista)"]
+    subgraph Town["Town ~/gt"]
+        Mayor["Mayor (LLM)"]
+        Deacon["Deacon (LLM, patrulla)"]
+        Boot["Boot (LLM efimero)"]
+        Dogs["Dogs (LLM)"]
+        Dolt[("Dolt + Beads")]
+    end
+    subgraph Rig["Rig (por proyecto)"]
+        Witness["Witness (LLM)"]
+        Refinery["Refinery (LLM + motor Go)"]
+        Polecat["Polecats (worktree git)"]
+        Crew["Crew"]
+    end
+    Human --> Mayor
+    Mayor -->|"gt sling"| Polecat
+    Daemon --> Boot
+    Daemon --> Deacon
+    Daemon --> Witness
+    Daemon --> Refinery
+    Boot --> Deacon
+    Deacon --> Witness
+    Deacon --> Dogs
+    Witness --> Polecat
+    Polecat -->|"gt done: MR"| Refinery
+    Refinery -->|"push"| Main["main"]
+    Mayor --- Dolt
+    Polecat --- Dolt

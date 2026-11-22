@@ -1,0 +1,20 @@
+sequenceDiagram
+    participant H as Humano
+    participant M as Mayor (LLM)
+    participant S as gt sling (Go)
+    participant P as Polecat (LLM)
+    participant W as Witness
+    participant R as Refinery
+    participant G as main
+    H->>M: pide una tarea
+    M->>S: bd create + gt sling bead rig
+    S->>S: guardas, spawn worktree, wisp mol-polecat-work
+    S->>P: hook + sesion tmux (gt prime en SessionStart)
+    P->>P: checklist de la formula
+    P->>W: gt done: push, MR bead, POLECAT_DONE
+    W->>R: MERGE_READY (evento + nudge)
+    W->>M: hueco libre (slot open)
+    R->>R: rebase, tests, gates
+    R->>G: merge no-ff y push
+    R->>W: MERGED
+    W->>P: limpieza del polecat

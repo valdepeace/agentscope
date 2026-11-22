@@ -1,0 +1,24 @@
+flowchart TB
+    Tick["Daemon: tick de heartbeat"]
+    Gate{"estop activo o shutdown?"}
+    Skip["No gestiona agentes"]
+    Idle{"Deacon fresco y sin trabajo activo?"}
+    Boot["Boot LLM: observar, decidir, actuar"]
+    Degraded["Triage mecanico sin LLM"]
+    Deacon["Deacon: mol-deacon-patrol"]
+    HB["checkDeaconHeartbeat (red de seguridad)"]
+    Witness["Witness por rig"]
+    Polecat["Polecat"]
+    DPol["Daemon: checkPolecatHealth y GUPP"]
+    Tick --> Gate
+    Gate -->|"si"| Skip
+    Gate -->|"no"| Idle
+    Idle -->|"si"| HB
+    Idle -->|"no"| Boot
+    Boot -->|"start, wake, nudge, interrupt"| Deacon
+    Boot -.->|"GT_DEGRADED o sin tmux"| Degraded
+    HB --> Deacon
+    Deacon -->|"health-scan, zombie-scan"| Witness
+    Witness -->|"peek, nudge, cleanup"| Polecat
+    Tick --> DPol
+    DPol -->|"sesion muerta con hook"| Witness

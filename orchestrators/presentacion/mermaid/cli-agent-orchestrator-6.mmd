@@ -1,0 +1,26 @@
+mindmap
+  root((CAO por dentro))
+    Supervisor LLM
+      Perfil code_supervisor
+      Herramientas MCP
+      Nunca escribe codigo
+    Delegacion
+      handoff una llamada run-step
+      assign con init diferido
+      assign_elastic via broker
+    Callback y mensajeria
+      Inbox entregado al quedar IDLE
+      Aristas de delegacion
+      Auto-forward si el worker calla
+    Contexto inyectado
+      Perfil como system prompt
+      Catalogo de skills y load_skill
+      Bloque cao-memory
+    Seguridad y politica
+      Roles y allowedTools
+      Techo delegateTools
+      Puerta MCP con CAO_TERMINAL_ID
+    Topologia K8s
+      Supervisor StatefulSet
+      Broker sin agentes
+      Workers desechables con lease

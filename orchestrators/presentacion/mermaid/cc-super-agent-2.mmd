@@ -1,0 +1,17 @@
+sequenceDiagram
+  participant U as Usuario
+  participant R as "Router (LLM)"
+  participant F as "Registros .md"
+  participant D as "bin/dispatch (Bash)"
+  participant W as "Worker claude -p (LLM)"
+  U->>R: mensaje (tmux o web)
+  R->>F: lee INDEX.md, crea task e INDEX (LLM)
+  R->>U: "On it: ..." (LLM)
+  R->>D: dispatch id dir brief en background (LLM lanza)
+  D->>D: flock, pending, slot, session-id (codigo)
+  D->>W: claude -p --resume o --session-id (codigo)
+  W->>D: result.json con Status Result Question (LLM)
+  D->>D: reintento si error transitorio (codigo)
+  D->>R: fin del comando (codigo)
+  R->>F: log y Outcome (LLM)
+  R->>U: resultado reescrito (LLM)

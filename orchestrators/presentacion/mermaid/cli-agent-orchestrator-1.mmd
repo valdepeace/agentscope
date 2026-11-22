@@ -1,0 +1,30 @@
+flowchart LR
+    SUP["Supervisor: CLI LLM en tmux"]
+    MCP["cao-mcp-server (stdio), mcp_server/server.py"]
+    ORCH["utils/orchestration.py"]
+    API["cao-server FastAPI, api/main.py"]
+    STEP["services/agent_step.py"]
+    TERM["services/terminal_service.py"]
+    TMUX["clients/tmux.py + backends"]
+    WRK["Worker: CLI agente en otra ventana tmux"]
+    PROV["providers/*"]
+    INBOX["inbox_service + delegation_callback_service"]
+    MON["status_monitor"]
+    DB[("SQLite: terminals, inbox, delegation_edges")]
+    STORE["agent_store/*.md + skills/*"]
+
+    SUP -->|"tool call MCP"| MCP
+    MCP --> ORCH
+    ORCH -->|"HTTP localhost:9889"| API
+    API --> STEP
+    API --> INBOX
+    STEP --> TERM
+    TERM --> TMUX
+    TMUX --> WRK
+    TERM --> PROV
+    MON -->|"lee pantalla"| WRK
+    TERM --> DB
+    INBOX --> DB
+    STORE --> TERM
+    WRK -->|"su propio MCP"| MCP
+    INBOX -->|"pega mensaje si IDLE"| SUP

@@ -1,0 +1,26 @@
+mindmap
+  root((agent-orchestrator))
+    Observacion
+      "SCM Observer 30 s"
+      "Reaper 5 s"
+      "Hashes semanticos y ETag"
+    Reaccion determinista
+      "ApplyPRObservation"
+      "Nudges CI review conflicto"
+      "Dedup persistido por firma"
+    Entrega segura
+      "sessionguard relee estado"
+      "Lease de entrada"
+      "Mensajero consciente del modo"
+    Agentes por rol
+      "Orquestador solo coordina"
+      "Worker dueno del PR"
+      "Reviewer solo lectura"
+    Contexto y skills
+      "Prompts por codigo"
+      "Skill using-ao instalada"
+      "Puntero en system prompt"
+    Seguridad
+      "Sanitizado de control"
+      "Breaker de muerte masiva"
+      "Sin sandbox de SO"

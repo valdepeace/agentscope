@@ -1,0 +1,15 @@
+flowchart LR
+    GH["GitHub / GitLab"] --> SCM["SCM Observer 30 s"]
+    SCM --> DB[("SQLite hechos + dedup")]
+    SCM --> LCM["Lifecycle Manager reactions.go"]
+    RP["Reaper 5 s"] --> LCM
+    LCM --> DB
+    LCM --> G["sessionguard"]
+    G --> MA["modeAwareMessenger"]
+    MA --> SM["Session Manager send"]
+    SM --> PTY["PTY / ConPTY"]
+    SM --> CH["Chat controller"]
+    PTY --> AG["Agente dueno del PR"]
+    CH --> AG
+    ORCH["Orquestador agente"] --> DEL["service/session delegacion"]
+    DEL --> SM

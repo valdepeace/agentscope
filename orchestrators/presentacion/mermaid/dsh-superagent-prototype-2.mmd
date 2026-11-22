@@ -1,0 +1,19 @@
+sequenceDiagram
+  participant S as Source GitHub codigo
+  participant E as Engine codigo
+  participant R as Router LLM
+  participant X as Executor codigo
+  participant W as Worker LLM
+  participant O as Outbox codigo
+  S->>E: 1 Trigger nuevo (poll cada 60 s)
+  E->>E: 2 dedupe, fan-out y gate determinista (codigo)
+  E->>R: 3 candidate card via efecto assessment
+  R->>E: 4 route accept o eval_decide (decide LLM)
+  E->>X: 5 Ticket + Mandate, efecto launch (codigo)
+  X->>W: 6 prepare worktree y primer mensaje JSON
+  W->>W: 7 trabaja, abre PR (decide LLM)
+  S->>X: 8 CI y comentarios por Subscription (codigo)
+  W->>E: 9 orchestrator_report ready (decide LLM)
+  E->>R: 10 relay worker_report (codigo)
+  R->>O: 11 orchestrator_reply result (decide LLM)
+  O->>S: 12 envia a la conversacion origen (codigo)

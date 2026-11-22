@@ -1,0 +1,417 @@
+<title>Orquestadores por dentro</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+:root{
+  /* Concepto: lectura tipo informe técnico, una columna con el diagrama como protagonista; modo presentar muestra una diapositiva cada vez */
+  --bg:#f4f6f8; --surface:#ffffff; --fg:#13202b; --muted:#56646f; --line:#d5dce2; --accent:#0b6e79; --accent-fg:#ffffff; --code-bg:#eaeff3; --focus:#b4540a;
+  --font-display:"Space Grotesk","Segoe UI",system-ui,sans-serif; --font-body:"Inter","Segoe UI",system-ui,sans-serif; --font-mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --bg:#0e161d; --surface:#15202a; --fg:#e4ecf1; --muted:#9aabb8; --line:#2a3946; --accent:#4cc9c0; --accent-fg:#06222a; --code-bg:#1b2935; --focus:#f0a35e; color-scheme:dark; } }
+:root[data-theme="dark"]{ --bg:#0e161d; --surface:#15202a; --fg:#e4ecf1; --muted:#9aabb8; --line:#2a3946; --accent:#4cc9c0; --accent-fg:#06222a; --code-bg:#1b2935; --focus:#f0a35e; color-scheme:dark; }
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:16px;line-height:1.6;padding-block:0 3rem;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--surface);z-index:30}
+a{color:var(--accent)} a:focus-visible,button:focus-visible,select:focus-visible,summary:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--surface);border-bottom:1px solid var(--line);margin-inline:calc(-1*max(16px,env(safe-area-inset-left,0px)));padding:.6rem max(16px,env(safe-area-inset-right,0px)) .6rem max(16px,env(safe-area-inset-left,0px));display:flex;flex-wrap:wrap;gap:.6rem .9rem;align-items:center}
+.bar h1{font:600 1rem/1.2 var(--font-display);margin:0;flex:1 1 14rem;min-width:0;text-wrap:balance}
+.bar .ctl{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center}
+.bar select,.bar button{font:500 .85rem var(--font-body);color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:.4rem .65rem;min-height:2.25rem;max-width:100%}
+.bar button{cursor:pointer} .bar button[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.bar button:disabled{opacity:.45;cursor:default}
+main{max-width:62rem;margin:1.5rem auto 0;display:flex;flex-direction:column;gap:1.75rem}
+.slide{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:1.4rem clamp(1rem,3vw,2rem) 1.1rem;min-width:0;scroll-margin-top:5.2rem}
+.slide-head{display:flex;gap:.9rem;align-items:baseline;margin-bottom:.8rem}
+.slide-n{font:600 .8rem var(--font-mono);color:var(--accent);min-width:1.9rem;font-variant-numeric:tabular-nums}
+.slide h2{font:600 clamp(1.25rem,2.4vw,1.7rem)/1.25 var(--font-display);margin:0;text-wrap:balance;min-width:0}
+.slide-body{min-width:0;display:flex;flex-direction:column;gap:.9rem}
+.slide-body p{margin:0;max-width:68ch} .slide-body ul{margin:0;padding-left:1.25rem;display:flex;flex-direction:column;gap:.45rem;max-width:72ch}
+.slide-body code{font:500 .86em var(--font-mono);background:var(--code-bg);padding:.1em .35em;border-radius:4px;overflow-wrap:anywhere}
+.origin{font:400 .82rem var(--font-mono);color:var(--muted)}
+.codewrap,.tablewrap,.diagram{overflow-x:auto;max-width:100%;border:1px solid var(--line);border-radius:8px}
+.codewrap pre{margin:0;padding:.9rem 1rem;background:var(--code-bg);font:400 .85rem/1.55 var(--font-mono);white-space:pre-wrap;overflow-wrap:anywhere}
+.codewrap code{background:none;padding:0;font:inherit}
+.diagram{padding:.75rem;background:var(--bg)} .diagram pre.mermaid{margin:0;text-align:center}
+table{border-collapse:collapse;width:100%;font-size:.88rem;min-width:34rem} th,td{padding:.45rem .65rem;border-bottom:1px solid var(--line);text-align:left;vertical-align:top} th{font:600 .78rem var(--font-body);letter-spacing:.04em;text-transform:uppercase;color:var(--muted);background:var(--bg)}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+.notes{margin-top:.8rem;font-size:.88rem;color:var(--muted)} .notes summary{cursor:pointer;width:fit-content}
+.slide-src{margin-top:1rem;padding-top:.7rem;border-top:1px dashed var(--line);font:400 .78rem/1.5 var(--font-mono);color:var(--muted);overflow-wrap:anywhere}
+.slide-src span{text-transform:uppercase;letter-spacing:.08em;font-weight:500;margin-right:.4rem}
+.foot{max-width:62rem;margin:1.5rem auto 0;color:var(--muted);font-size:.85rem}
+.present main{margin-top:1.2rem} .present .slide{display:none} .present .slide.is-current{display:block}
+.present .slide{padding:1.8rem clamp(1rem,4vw,3rem)} .present .slide h2{font-size:clamp(1.5rem,3.2vw,2.2rem)} .present .slide-body p,.present .slide-body ul{font-size:1.08rem}
+@media (max-width:560px){ .slide{padding:1.1rem .9rem .9rem} }
+@media print{ .bar{display:none} .slide{break-inside:avoid} }
+@media (prefers-reduced-motion:no-preference){ html{scroll-behavior:smooth} }
+.repos{max-width:62rem;margin:1rem auto 0;font-size:.88rem;line-height:1.8;color:var(--muted)} .repos a{margin-inline:.1rem} a.repo{text-decoration:underline;text-underline-offset:2px}
+</style>
+<div class="bar"><h1>Orquestadores de agentes de código por dentro</h1><div class="ctl"><label class="sr" for="goto" style="position:absolute;left:-9999px">Ir a la diapositiva</label><select id="goto" aria-label="Ir a la diapositiva"><option value="0">1. Orquestadores de agentes de código: cómo funcionan por de…</option><option value="1">2. El patrón Router/Worker en una diapositiva</option><option value="2">3. El mapa: nueve repos por familias</option><option value="3">4. Popularidad no es calidad</option><option value="4">5. dsh-superagent-prototype: arquitectura</option><option value="5">6. dsh-superagent-prototype: ciclo de vida de una tarea</option><option value="6">7. dsh-superagent-prototype: prompt clave y skills</option><option value="7">8. cc-super-agent: arquitectura</option><option value="8">9. cc-super-agent: ciclo de vida de una tarea</option><option value="9">10. cc-super-agent: prompt clave y skills</option><option value="10">11. agent-orchestrator: arquitectura</option><option value="11">12. agent-orchestrator: ciclo de vida de un fallo de CI</option><option value="12">13. agent-orchestrator: prompt clave y skills</option><option value="13">14. cli-agent-orchestrator (CAO): arquitectura</option><option value="14">15. cli-agent-orchestrator (CAO): ciclo de una delegación</option><option value="15">16. cli-agent-orchestrator (CAO): prompt clave y skills</option><option value="16">17. CAO en Kubernetes: broker de privilegios mínimos (ejemplo…</option><option value="17">18. gastown: arquitectura</option><option value="18">19. gastown: ciclo de vida de una tarea y estados del polecat</option><option value="19">20. gastown: prompt clave y skills</option><option value="20">21. gastown: la cadena de vigilancia</option><option value="21">22. Comparativa de capacidades (nueve repos)</option><option value="22">23. El patrón nuevo: coordinador LLM más enrutado determinist…</option><option value="23">24. Huecos que nadie cubre (en lo leído)</option><option value="24">25. Ideas que merece la pena copiar</option><option value="25">26. Límites de confianza</option><option value="26">27. Anexo: referencias ruta:línea</option></select><button id="prev" type="button" aria-label="Diapositiva anterior">←</button><button id="next" type="button" aria-label="Diapositiva siguiente">→</button><button id="m-read" type="button" aria-pressed="true">Lectura</button><button id="m-pres" type="button" aria-pressed="false">Presentar</button></div></div>
+<nav class="repos" aria-label="Repositorios estudiados"><strong>Los nueve repos</strong> <a href="https://github.com/deepseek-ai/dsh-superagent-prototype" target="_blank" rel="noopener">dsh-superagent-prototype</a> · <a href="https://github.com/yingpengma/cc-super-agent" target="_blank" rel="noopener">cc-super-agent</a> · <a href="https://github.com/LofiSu/dsh-super-agent" target="_blank" rel="noopener">LofiSu/dsh-super-agent</a> · <a href="https://github.com/ketchupz1999/super-super-harness" target="_blank" rel="noopener">super-super-harness</a> · <a href="https://github.com/bytedance/deer-flow" target="_blank" rel="noopener">deer-flow</a> · <a href="https://github.com/OrchestratorInc/agent-orchestrator" target="_blank" rel="noopener">agent-orchestrator</a> · <a href="https://github.com/desplega-ai/agent-swarm" target="_blank" rel="noopener">agent-swarm</a> · <a href="https://github.com/awslabs/cli-agent-orchestrator" target="_blank" rel="noopener">cli-agent-orchestrator</a> · <a href="https://github.com/gastownhall/gastown" target="_blank" rel="noopener">gastown</a></nav>
+<main>
+<section class="slide" id="d1" data-n="1"><header class="slide-head"><span class="slide-n">1</span><h2>Orquestadores de agentes de código: cómo funcionan por dentro</h2></header><div class="slide-body"><ul><li>Nueve repos que reparten trabajo entre un coordinador y varios agentes que programan.</li><li>Cinco vistos por dentro: arquitectura, ciclo de una tarea, prompt clave y skills.</li><li>Por qué importa: el mismo patrón aparece con cinco reparticiones distintas de qué decide el LLM y qué decide el código.</li><li>Todo es lectura de código y documentación: no se ejecutó nada.</li><li>No es un ranking: no hay «mejor» ni «peor».</li></ul></div><details class="notes"><summary>Notas del orador</summary><p>estudio de solo lectura del 2026-11-21; las rutas completas están en el anexo.</p></details></section>
+<section class="slide" id="d2" data-n="2"><header class="slide-head"><span class="slide-n">2</span><h2>El patrón Router/Worker en una diapositiva</h2></header><div class="slide-body"><ul><li><strong>Router</strong>: coordinador residente; decide qué merece atención y reparte. Solo él habla con el usuario.</li><li><strong>Worker</strong>: ejecutor aislado (sesión y directorio propios) que hace el trabajo y reporta al Router.</li><li><strong>Watchdog</strong>: vigila que los Workers no se cuelguen ni se pierdan.</li><li>La idea viene del diseño «Super-agent» de DeepSeek (artículo original no localizado: lo conocemos por su prototipo y por resúmenes de terceros).</li><li>La pregunta que recorre el deck: ¿qué parte decide un LLM y qué parte es código determinista?</li></ul></div><footer class="slide-src"><span>Fuente</span> estudio: STUDY.md §1 y §4; REFS.md §2</footer></section>
+<section class="slide" id="d3" data-n="3"><header class="slide-head"><span class="slide-n">3</span><h2>El mapa: nueve repos por familias</h2></header><div class="slide-body"><ul><li><strong>Linaje DeepSeek Super-agent</strong>: <a class="repo" href="https://github.com/deepseek-ai/dsh-superagent-prototype" target="_blank" rel="noopener"><code>dsh-superagent-prototype</code></a>, <a class="repo" href="https://github.com/LofiSu/dsh-super-agent" target="_blank" rel="noopener"><code>deepseek-super-agent</code></a> (LofiSu, hoy <code>dsh-super-agent</code>), <a class="repo" href="https://github.com/yingpengma/cc-super-agent" target="_blank" rel="noopener"><code>cc-super-agent</code></a>, <a class="repo" href="https://github.com/ketchupz1999/super-super-harness" target="_blank" rel="noopener"><code>super-super-harness</code></a>.</li><li><strong>Orquestadores de agentes de código</strong>: <a class="repo" href="https://github.com/OrchestratorInc/agent-orchestrator" target="_blank" rel="noopener"><code>agent-orchestrator</code></a>, <a class="repo" href="https://github.com/desplega-ai/agent-swarm" target="_blank" rel="noopener"><code>agent-swarm</code></a>, <a class="repo" href="https://github.com/awslabs/cli-agent-orchestrator" target="_blank" rel="noopener"><code>cli-agent-orchestrator</code></a> (CAO), <a class="repo" href="https://github.com/gastownhall/gastown" target="_blank" rel="noopener"><code>gastown</code></a>.</li><li><strong>Contraste</strong>: <a class="repo" href="https://github.com/bytedance/deer-flow" target="_blank" rel="noopener"><code>deer-flow</code></a>. Es de ByteDance y no tiene relación con el linaje de diseño de DeepSeek: comparte la palabra «super agent», no el patrón (no es Router/Worker: un único <em>lead agent</em>).</li><li>Tratamiento completo en este deck: dsh, cc-super-agent, agent-orchestrator, CAO y gastown. Los otros cuatro, solo en las comparativas.</li><li>Árbol por los siete ejes del estudio: <a href="flows/mapa-nueve-repos.tree.html" target="_blank" rel="noopener">mapa-nueve-repos.tree.html</a></li></ul></div><details class="notes"><summary>Notas del orador</summary><p>el orden del árbol no es un ranking.</p></details><footer class="slide-src"><span>Fuente</span> estudio: STUDY.md §1 y §10; TABLAS.md §2</footer></section>
+<section class="slide" id="d4" data-n="4"><header class="slide-head"><span class="slide-n">4</span><h2>Popularidad no es calidad</h2></header><div class="slide-body"><div class="tablewrap"><table><thead><tr><th>Repo</th><th class="num">Estrellas</th><th class="num">Commits</th><th>Dato</th></tr></thead><tbody><tr><td><code>bytedance/deer-flow</code></td><td class="num">85.571</td><td class="num">4.931</td><td>API, 2026-11-21</td></tr><tr><td><code>deepseek-ai/dsh-superagent-prototype</code></td><td class="num">24.127</td><td class="num">1</td><td>API, 2026-11-21</td></tr><tr><td><code>gastownhall/gastown</code></td><td class="num">18.862</td><td class="num">7.783</td><td>API, 2026-11-21</td></tr><tr><td><code>OrchestratorInc/agent-orchestrator</code></td><td class="num">14.996</td><td class="num">4.379</td><td>API, 2026-11-21</td></tr><tr><td><code>awslabs/cli-agent-orchestrator</code></td><td class="num">1.619</td><td class="num">797</td><td>API, 2026-11-21</td></tr><tr><td><code>desplega-ai/agent-swarm</code></td><td class="num">1.097</td><td class="num">3.989</td><td>API, 2026-11-21</td></tr><tr><td><a class="repo" href="https://github.com/LofiSu/dsh-super-agent" target="_blank" rel="noopener"><code>LofiSu/dsh-super-agent</code></a></td><td class="num">146</td><td class="num">375</td><td>API, 2026-11-21</td></tr><tr><td><code>yingpengma/cc-super-agent</code></td><td class="num">7</td><td class="num">29</td><td>API, 2026-11-21</td></tr><tr><td><code>ketchupz1999/super-super-harness</code></td><td class="num">1</td><td class="num">6</td><td>API, 2026-11-21</td></tr></tbody></table></div>
+<ul><li>El prototipo de DeepSeek: 24.127 estrellas con 1 commit y 0 issues abiertas (API, 2026-11-21). Probable tirón de marca; no hay uso medido.</li><li>deer-flow: 4.931 commits y 3 releases, última v2.2.0 (API, 2026-11-21); su <code>SECURITY.md</code> dice que no hay release oficial (paráfrasis; <code>deer-flow/SECURITY.md:5</code>).</li><li>gastown (7.783 commits), agent-orchestrator (4.379) y agent-swarm (3.989) son proyectos con desarrollo activo; las estrellas no los distinguen de un prototipo de un solo commit.</li><li>Las estrellas miden atención. Aquí no se usan para ordenar ni puntuar nada.</li></ul></div><footer class="slide-src"><span>Fuente</span> estudio: TABLAS.md §1; REFS.md §3.1 y §3.2</footer></section>
+<section class="slide" id="d5" data-n="5"><header class="slide-head"><span class="slide-n">5</span><h2>dsh-superagent-prototype: arquitectura</h2></header><div class="slide-body has-diagram"><ul><li>Código determinista alrededor de dos sesiones LLM: Router y Worker.</li><li>Un bucle cada 2 s; el Engine es el único punto transaccional; el gate de admisión es código.</li><li>SQLite más una cola durable de efectos (patrón outbox) para hablar con GitHub o Feishu.</li><li>Una sesión y un directorio (worktree) por Ticket; ambas sesiones con <code>danger-full-access</code>: no hay sandbox.</li><li>Diagrama completo: <a href="flows/dsh-superagent-prototype.architecture.html" target="_blank" rel="noopener">dsh-superagent-prototype.architecture.html</a></li></ul>
+<div class="diagram"><pre class="mermaid">flowchart LR
+  GH["GitHub / Feishu"] --&gt; SRC["Sources (poll)"]
+  SRC --&gt; PAS["Passes cada 2 s"]
+  PAS --&gt; ENG["Engine (intake, evals, tickets)"]
+  ENG &lt;--&gt; DB[("SQLite + cola de effects")]
+  ENG --&gt; POL["Policy gate"]
+  ENG --&gt; ASR["MasterAssessor"]
+  ASR --&gt; RTR["Sesion Router LLM"]
+  RTR --&gt;|"orchestrator_route / eval_decide"| ENG
+  ENG --&gt; EXE["DshExecutor"]
+  EXE --&gt; WRK["Sesion Worker LLM"]
+  WRK --&gt;|"orchestrator_report / ack"| ENG
+  ENG --&gt;|"relay"| RTR
+  RTR --&gt;|"orchestrator_reply"| OUT["Outbox + Channel"]
+  OUT --&gt; GH</pre></div></div><footer class="slide-src"><span>Fuente</span> dsh-superagent-prototype: src/core/engine.ts, src/app/passes.ts, src/policy.ts, src/app/sessions.ts</footer></section>
+<section class="slide" id="d6" data-n="6"><header class="slide-head"><span class="slide-n">6</span><h2>dsh-superagent-prototype: ciclo de vida de una tarea</h2></header><div class="slide-body has-diagram"><ul><li>Caso: una persona autorizada menciona al agente en un issue y al final hay un PR.</li><li>Decide un LLM en 4 de los 12 pasos (4, 7, 9 y 11); el resto es código, incluido el gate.</li><li>«LLM propone, código dispone»: el Engine rechaza un <em>accept</em> inferido fuera del modo <code>auto</code>.</li><li>CI y comentarios posteriores llegan al Worker por Subscription, sin gate ni LLM.</li><li>Secuencia completa: <a href="flows/dsh-superagent-prototype.sequence.html" target="_blank" rel="noopener">dsh-superagent-prototype.sequence.html</a></li></ul>
+<div class="diagram"><pre class="mermaid">sequenceDiagram
+  participant S as Source GitHub codigo
+  participant E as Engine codigo
+  participant R as Router LLM
+  participant X as Executor codigo
+  participant W as Worker LLM
+  participant O as Outbox codigo
+  S-&gt;&gt;E: 1 Trigger nuevo (poll cada 60 s)
+  E-&gt;&gt;E: 2 dedupe, fan-out y gate determinista (codigo)
+  E-&gt;&gt;R: 3 candidate card via efecto assessment
+  R-&gt;&gt;E: 4 route accept o eval_decide (decide LLM)
+  E-&gt;&gt;X: 5 Ticket + Mandate, efecto launch (codigo)
+  X-&gt;&gt;W: 6 prepare worktree y primer mensaje JSON
+  W-&gt;&gt;W: 7 trabaja, abre PR (decide LLM)
+  S-&gt;&gt;X: 8 CI y comentarios por Subscription (codigo)
+  W-&gt;&gt;E: 9 orchestrator_report ready (decide LLM)
+  E-&gt;&gt;R: 10 relay worker_report (codigo)
+  R-&gt;&gt;O: 11 orchestrator_reply result (decide LLM)
+  O-&gt;&gt;S: 12 envia a la conversacion origen (codigo)</pre></div></div><footer class="slide-src"><span>Fuente</span> dsh-superagent-prototype: src/sources/github.ts, src/core/intake.ts, src/core/evals.ts, prompts/dispatch.md</footer></section>
+<section class="slide" id="d7" data-n="7"><header class="slide-head"><span class="slide-n">7</span><h2>dsh-superagent-prototype: prompt clave y skills</h2></header><div class="slide-body"><div class="codewrap"><pre><code>Outside an assessment, the orchestrator must not inspect code, detailed logs, linked documents or technical discussion, or solve worker blockers itself; leave those activities to workers.
+Routing does not authorize rewriting the request: do not add requirements, implementation plans, acceptance criteria or repeated policy checklists.
+Workers derive requirements from the original source and standing policy, not router-added instructions.</code></pre></div>
+<p class="origin">Origen: <code>prompts/shared.md:5-7</code> · Licencia: MIT</p>
+<ul><li><strong>Skills del PRODUCTO</strong>: 2, <code>dsh-superagent-github</code> (siempre) y <code>dsh-superagent-feishu</code> (solo con bot Feishu); se registran en cada sesión.</li><li><strong>Skills de desarrollo del repo</strong>: no encontradas (búsqueda por nombre; <code>.claude/</code> y <code>.agents/</code> sin skills).</li><li>Ojo, PROMETIDO: el Router «no lee código» por prompt, pero conserva <code>bash</code> y <code>read</code> en su allowlist.</li><li>Ojo, sin resolver: el preset del Router carga el plugin <code>agent-instructions</code> (AGENTS.md) y la doc dice que la sesión principal no lo lee. Efecto real no verificado.</li></ul></div><footer class="slide-src"><span>Fuente</span> dsh-superagent-prototype: prompts/shared.md, skills/*/SKILL.md, src/app/sessions.ts, cordis.patch.yml</footer></section>
+<section class="slide" id="d8" data-n="8"><header class="slide-head"><span class="slide-n">8</span><h2>cc-super-agent: arquitectura</h2></header><div class="slide-body has-diagram"><ul><li>~1.300 líneas: casi toda la lógica es prompt (<code>AGENTS.md</code>), el resto Bash y una web en Node.</li><li>Router: Claude Code interactivo dentro de tmux, relanzado en bucle por <code>router/loop.sh</code>.</li><li>Dispatch en Bash: cola con <code>flock</code>, máximo 3 Workers, reintentos, <code>--resume</code> de sesión.</li><li>Worker: <code>claude -p</code> en el directorio del proyecto, sin sandbox; estado en Markdown (<code>INDEX.md</code>, <code>tasks/</code>).</li><li>Watchdog: cron cada 15 min con un LLM que solo diagnostica y marca, nunca reinicia.</li><li>Diagrama completo: <a href="flows/cc-super-agent.architecture.html" target="_blank" rel="noopener">cc-super-agent.architecture.html</a></li></ul>
+<div class="diagram"><pre class="mermaid">flowchart LR
+  User["Usuario"]
+  Web["Web UI server.mjs"]
+  Tmux["tmux ccsa-router"]
+  Loop["router/loop.sh"]
+  Router["Router (claude interactivo)"]
+  Disp["bin/dispatch"]
+  Worker["Worker (claude -p)"]
+  Rules["templates/worker-rules.md"]
+  Runs[".runs/ + pending/"]
+  Rec["INDEX.md tasks/ projects/"]
+  Cron["cron 15 min"]
+  Dog["watchdog/run.sh + prompt.md"]
+  User --&gt; Web
+  User --&gt; Tmux
+  Web --&gt; Tmux
+  Loop --&gt; Router
+  Tmux --&gt; Loop
+  Router --&gt; Rec
+  Router --&gt; Disp
+  Disp --&gt; Runs
+  Disp --&gt; Worker
+  Rules --&gt; Worker
+  Worker --&gt; Runs
+  Cron --&gt; Dog
+  Dog --&gt; Runs
+  Dog --&gt; Rec
+  Dog --&gt; Router</pre></div></div><footer class="slide-src"><span>Fuente</span> cc-super-agent: AGENTS.md, router/loop.sh, bin/dispatch, watchdog/run.sh</footer></section>
+<section class="slide" id="d9" data-n="9"><header class="slide-head"><span class="slide-n">9</span><h2>cc-super-agent: ciclo de vida de una tarea</h2></header><div class="slide-body has-diagram"><ul><li>El Router clasifica, confirma («On it: ...»), registra primero y luego despacha: todo eso es LLM.</li><li><code>bin/dispatch</code> (Bash) pone la cola, el slot y el <code>session-id</code>, y reintenta solo errores transitorios con backoff.</li><li>El Worker cierra con <code>Status / Result / Question</code>; ese formato lo impone solo el prompt, sin validación en código.</li><li>El Router reescribe el informe para el usuario: nunca lo reenvía tal cual.</li><li>Secuencia completa: <a href="flows/cc-super-agent.sequence.html" target="_blank" rel="noopener">cc-super-agent.sequence.html</a></li></ul>
+<div class="diagram"><pre class="mermaid">sequenceDiagram
+  participant U as Usuario
+  participant R as "Router (LLM)"
+  participant F as "Registros .md"
+  participant D as "bin/dispatch (Bash)"
+  participant W as "Worker claude -p (LLM)"
+  U-&gt;&gt;R: mensaje (tmux o web)
+  R-&gt;&gt;F: lee INDEX.md, crea task e INDEX (LLM)
+  R-&gt;&gt;U: "On it: ..." (LLM)
+  R-&gt;&gt;D: dispatch id dir brief en background (LLM lanza)
+  D-&gt;&gt;D: flock, pending, slot, session-id (codigo)
+  D-&gt;&gt;W: claude -p --resume o --session-id (codigo)
+  W-&gt;&gt;D: result.json con Status Result Question (LLM)
+  D-&gt;&gt;D: reintento si error transitorio (codigo)
+  D-&gt;&gt;R: fin del comando (codigo)
+  R-&gt;&gt;F: log y Outcome (LLM)
+  R-&gt;&gt;U: resultado reescrito (LLM)</pre></div></div><footer class="slide-src"><span>Fuente</span> cc-super-agent: AGENTS.md, bin/dispatch, templates/worker-rules.md</footer></section>
+<section class="slide" id="d10" data-n="10"><header class="slide-head"><span class="slide-n">10</span><h2>cc-super-agent: prompt clave y skills</h2></header><div class="slide-body"><div class="codewrap"><pre><code>**Take as little of the user's attention as possible, and give as much value as possible.**   (AGENTS.md:9)
+The Router does not do the work itself. It does not read the code of other projects, investigate problems or design solutions. [...]   (AGENTS.md:27)
+1. **Pass on the user's own words.** The brief quotes the user's request verbatim. [...]   (AGENTS.md:50)
+2. **Attach a message to existing work only when it clearly points there.** [...]   (AGENTS.md:51)
+- Do not forward a Worker's report as it is. Extract what the user needs and write it fresh.   (AGENTS.md:107)
+**Record first, then act.** [...]   (AGENTS.md:213)</code></pre></div>
+<p class="origin">Origen: <code>AGENTS.md:9, 27, 50, 51, 107, 213</code> (líneas no contiguas) · Licencia: MIT</p>
+<ul><li><strong>Cero skills, cero hooks, todo es prompt</strong>: ni <code>.claude/skills</code>, ni <code>SKILL.md</code>, ni <code>settings.json</code> propio.</li><li>La «habilidad» vive en <code>AGENTS.md</code> (vía <code>CLAUDE.md</code> = <code>@AGENTS.md</code>) y en <code>templates/worker-rules.md</code> (vía <code>--append-system-prompt</code>).</li><li>Ojo: el Watchdog tiene <code>Edit</code> y <code>Write</code> sin restricción de ruta, aunque su prompt diga «solo <code>INDEX.md</code> y <code>tasks/</code>».</li></ul></div><footer class="slide-src"><span>Fuente</span> cc-super-agent: AGENTS.md, CLAUDE.md, templates/worker-rules.md, watchdog/run.sh, watchdog/prompt.md</footer></section>
+<section class="slide" id="d11" data-n="11"><header class="slide-head"><span class="slide-n">11</span><h2>agent-orchestrator: arquitectura</h2></header><div class="slide-body has-diagram"><ul><li>Daemon en Go (frontend Electron/React): un <strong>agente orquestador LLM</strong> más <strong>enrutado determinista en Go</strong> de eventos de CI, review y conflictos.</li><li>SCM Observer cada 30 s, Reaper cada 5 s (solo vida) y un Lifecycle Manager que convierte hechos en avisos (<em>nudges</em>).</li><li><code>sessionguard</code> relee el estado de la sesión justo antes de escribir en su terminal.</li><li>Almacenamiento SQLite (WAL, escritor único, unas 215 migraciones); el código de <code>store/</code> no se leyó a fondo.</li><li>Cobertura de lectura baja (~3-4 % de los ficheros en la 1.ª ronda y ~50 más de lifecycle y Windows en la 2.ª; STUDY §10 y §12): lo que no aparece aquí puede existir.</li><li>Diagrama completo: <a href="flows/agent-orchestrator.architecture.html" target="_blank" rel="noopener">agent-orchestrator.architecture.html</a></li></ul>
+<div class="diagram"><pre class="mermaid">flowchart LR
+    GH["GitHub / GitLab"] --&gt; SCM["SCM Observer 30 s"]
+    SCM --&gt; DB[("SQLite hechos + dedup")]
+    SCM --&gt; LCM["Lifecycle Manager reactions.go"]
+    RP["Reaper 5 s"] --&gt; LCM
+    LCM --&gt; DB
+    LCM --&gt; G["sessionguard"]
+    G --&gt; MA["modeAwareMessenger"]
+    MA --&gt; SM["Session Manager send"]
+    SM --&gt; PTY["PTY / ConPTY"]
+    SM --&gt; CH["Chat controller"]
+    PTY --&gt; AG["Agente dueno del PR"]
+    CH --&gt; AG
+    ORCH["Orquestador agente"] --&gt; DEL["service/session delegacion"]
+    DEL --&gt; SM</pre></div></div><footer class="slide-src"><span>Fuente</span> agent-orchestrator: backend/internal/observe/scm/observer.go, backend/internal/lifecycle/reactions.go, backend/internal/sessionguard/guard.go</footer></section>
+<section class="slide" id="d12" data-n="12"><header class="slide-head"><span class="slide-n">12</span><h2>agent-orchestrator: ciclo de vida de un fallo de CI</h2></header><div class="slide-body has-diagram"><ul><li>Caso: un CI falla en el PR de una sesión. En lo leído, ningún LLM interviene hasta el último paso (el agente dueño del PR corrige y hace push).</li><li>Deduplicación por firma, persistida; un aviso repetido tras reinicio se prefiere a uno perdido.</li><li>La firma de CI incluye el commit: cada push que siga fallando genera un aviso nuevo, sin tope. No hay detector de «vivo pero atascado»: <code>no_signal</code> es solo una etiqueta a los 90 s (STUDY §12).</li><li>Estados de sesión simplificados de <code>domain.Activity</code>; la doc de arquitectura dibuja estados extra que no son campo real.</li><li>Regla de terminación: una sonda fallida no prueba que la sesión esté muerta.</li><li>Secuencia completa: <a href="flows/agent-orchestrator.sequence.html" target="_blank" rel="noopener">agent-orchestrator.sequence.html</a></li></ul>
+<div class="diagram"><pre class="mermaid">sequenceDiagram
+    participant GH as GitHub
+    participant OBS as SCM Observer
+    participant DB as SQLite
+    participant LCM as Lifecycle reactions
+    participant GD as sessionguard
+    participant SM as Session Manager
+    participant AG as Agente dueno
+    OBS-&gt;&gt;GH: FetchPullRequests por lotes
+    GH--&gt;&gt;OBS: CI failing + checks
+    OBS-&gt;&gt;GH: cola de log del check fallido
+    OBS-&gt;&gt;DB: WriteSCMObservation
+    OBS-&gt;&gt;LCM: ApplySCMObservation
+    LCM-&gt;&gt;LCM: sendOnce dedup por firma
+    LCM-&gt;&gt;GD: Nudge mensaje CI
+    GD-&gt;&gt;DB: releer sesion antes de pegar
+    GD-&gt;&gt;SM: Send via modeAwareMessenger
+    SM-&gt;&gt;AG: pegar en PTY o turno Chat
+    LCM-&gt;&gt;DB: persistir last_nudge_signature</pre></div>
+<div class="diagram"><pre class="mermaid">stateDiagram-v2
+    [*] --&gt; Spawning: Spawn
+    Spawning --&gt; Active: MarkSpawned
+    Active --&gt; Idle: hook idle
+    Idle --&gt; Active: hook prompt submit
+    Active --&gt; WaitingInput: espera input
+    Active --&gt; Blocked: permiso pendiente
+    WaitingInput --&gt; Active: usuario responde
+    Blocked --&gt; Active: usuario decide
+    Active --&gt; Exited: runtime vivo y workload muerto
+    Exited --&gt; Active: Resume
+    Active --&gt; Terminated: Kill o PR fusionado o runtime muerto
+    Exited --&gt; Terminated: runtime muerto sin actividad reciente
+    Terminated --&gt; [*]</pre></div></div><footer class="slide-src"><span>Fuente</span> agent-orchestrator: backend/internal/observe/scm/observer.go, backend/internal/lifecycle/reactions.go, backend/internal/lifecycle/manager.go, backend/internal/observe/reaper/reaper.go</footer></section>
+<section class="slide" id="d13" data-n="13"><header class="slide-head"><span class="slide-n">13</span><h2>agent-orchestrator: prompt clave y skills</h2></header><div class="slide-body"><div class="codewrap"><pre><code>You are the human-facing orchestrator for project %s.
+Your job is to coordinate work, not to perform implementation. [...]
+- For every implementation, fix, test, or PR update task, always spawn or redirect a worker session; do not perform the task in the orchestrator session.
+- Never ever make code changes directly in the orchestrator session.
+- Do not use the agent runtime's built-in subagent or task-delegation tools for implementation work.</code></pre></div>
+<p class="origin">Origen: <code>backend/internal/session_manager/prompt.go:243, 245, 250, 253, 260</code> (líneas no contiguas) · Licencia: Apache-2.0</p>
+<ul><li><strong>Skills del PRODUCTO</strong>: <code>using-ao</code> (catálogo del CLI <code>ao</code> y 30 ficheros de comandos) y <code>bug-triage</code>, embebidas con <code>go:embed</code> e instaladas en cada arranque; el agente las lee bajo demanda.</li><li><strong>Skills de desarrollo del repo</strong>: <code>.claude/skills/ao-desktop-dev</code> y <code>bug-triage</code>; sus versiones canónicas en <code>.agents/skills/</code> no se leyeron.</li><li><strong>Hallazgo de seguridad</strong>: con Codex en modo Chat, el modo <em>default</em> (y el <em>bypass</em>) corre con aprobación <code>never</code> y <code>danger-full-access</code>. En lo leído, el aislamiento es el worktree; otro mecanismo no encontrado (cobertura baja).</li></ul></div><footer class="slide-src"><span>Fuente</span> agent-orchestrator: backend/internal/session_manager/prompt.go, backend/internal/skillassets/skillassets.go, backend/internal/adapters/chatdriver/codexappserver/driver.go</footer></section>
+<section class="slide" id="d14" data-n="14"><header class="slide-head"><span class="slide-n">14</span><h2>cli-agent-orchestrator (CAO): arquitectura</h2></header><div class="slide-body has-diagram"><ul><li>Supervisor LLM en tmux que delega con herramientas MCP (<code>handoff</code>, <code>assign</code>, <code>assign_elastic</code>); no se encontró router en código.</li><li><code>cao-mcp-server</code> es un cliente delgado; el trabajo lo hace <code>cao-server</code> (FastAPI) con SQLite.</li><li>Cada Worker es otro CLI agente en otra ventana tmux; no se encontró sandbox local (cobertura ~20 %).</li><li>El estado del Worker se deduce leyendo su pantalla (<code>status_monitor</code>).</li><li><code>cao-server</code> expone 123 rutas y su autenticación viene <strong>apagada por defecto</strong> (se activa con variables de entorno); cobertura ~15-20 % del código relevante (STUDY §12).</li><li>Diagrama completo: <a href="flows/cli-agent-orchestrator.architecture.html" target="_blank" rel="noopener">cli-agent-orchestrator.architecture.html</a></li></ul>
+<div class="diagram"><pre class="mermaid">flowchart LR
+    SUP["Supervisor: CLI LLM en tmux"]
+    MCP["cao-mcp-server (stdio), mcp_server/server.py"]
+    ORCH["utils/orchestration.py"]
+    API["cao-server FastAPI, api/main.py"]
+    STEP["services/agent_step.py"]
+    TERM["services/terminal_service.py"]
+    TMUX["clients/tmux.py + backends"]
+    WRK["Worker: CLI agente en otra ventana tmux"]
+    PROV["providers/*"]
+    INBOX["inbox_service + delegation_callback_service"]
+    MON["status_monitor"]
+    DB[("SQLite: terminals, inbox, delegation_edges")]
+    STORE["agent_store/*.md + skills/*"]
+
+    SUP --&gt;|"tool call MCP"| MCP
+    MCP --&gt; ORCH
+    ORCH --&gt;|"HTTP localhost:9889"| API
+    API --&gt; STEP
+    API --&gt; INBOX
+    STEP --&gt; TERM
+    TERM --&gt; TMUX
+    TMUX --&gt; WRK
+    TERM --&gt; PROV
+    MON --&gt;|"lee pantalla"| WRK
+    TERM --&gt; DB
+    INBOX --&gt; DB
+    STORE --&gt; TERM
+    WRK --&gt;|"su propio MCP"| MCP
+    INBOX --&gt;|"pega mensaje si IDLE"| SUP</pre></div></div><footer class="slide-src"><span>Fuente</span> cli-agent-orchestrator: src/cli_agent_orchestrator/mcp_server/server.py, src/cli_agent_orchestrator/utils/orchestration.py, src/cli_agent_orchestrator/services/agent_step.py</footer></section>
+<section class="slide" id="d15" data-n="15"><header class="slide-head"><span class="slide-n">15</span><h2>cli-agent-orchestrator (CAO): ciclo de una delegación</h2></header><div class="slide-body has-diagram"><ul><li><code>handoff</code>: el supervisor llama UNA herramienta y se queda bloqueado; los pasos 2 a 11 son código.</li><li>El resultado se persiste ANTES de desmontar el terminal; en timeout o error el terminal no se borra.</li><li><code>assign</code> es asíncrono: la respuesta vuelve por el inbox cuando el supervisor queda IDLE; si el Worker calla, el servidor reenvía su última salida.</li><li>El README del ejemplo K8s admite fallos del detector de fin de turno (un «success» a los 3,1 s en una tarea de 36 s). El código no lo mitiga: el broker lo detecta a posteriori y el supervisor sigue recibiendo <code>success: true</code> (STUDY §12).</li><li>Secuencia completa: <a href="flows/cli-agent-orchestrator.sequence.html" target="_blank" rel="noopener">cli-agent-orchestrator.sequence.html</a></li></ul>
+<div class="diagram"><pre class="mermaid">sequenceDiagram
+    participant S as "Supervisor LLM"
+    participant M as "cao-mcp-server"
+    participant A as "cao-server"
+    participant W as "Worker CLI en tmux"
+    S-&gt;&gt;M: "handoff(agent_profile, message)"
+    M-&gt;&gt;M: "comprueba allowlist del llamante"
+    M-&gt;&gt;A: "POST /terminals/run-step con job_id"
+    A-&gt;&gt;W: "crea ventana tmux e inicializa proveedor"
+    A-&gt;&gt;W: "pega memoria y prompt"
+    W--&gt;&gt;A: "estado PROCESSING y luego COMPLETED"
+    A-&gt;&gt;A: "extrae ultimo mensaje y persiste job_id"
+    A-&gt;&gt;W: "exit del CLI y delete_terminal"
+    A--&gt;&gt;M: "last_message"
+    M--&gt;&gt;S: "HandoffResult con la salida"</pre></div></div><footer class="slide-src"><span>Fuente</span> cli-agent-orchestrator: src/cli_agent_orchestrator/utils/orchestration.py, src/cli_agent_orchestrator/services/agent_step.py, src/cli_agent_orchestrator/services/delegation_callback_service.py</footer></section>
+<section class="slide" id="d16" data-n="16"><header class="slide-head"><span class="slide-n">16</span><h2>cli-agent-orchestrator (CAO): prompt clave y skills</h2></header><div class="slide-body"><div class="codewrap"><pre><code>## Critical Rules
+1. **NEVER write code directly yourself**. Your role is strictly coordination and supervision.
+2. **ALWAYS assign actual coding work** to the Developer Agent.
+3. **ALWAYS assign code reviews** to the Code Reviewer Agent.
+4. **ALWAYS maintain absolute file paths** for all code artifacts created during the workflow.
+5. **ALWAYS write task descriptions to files** before assigning them to worker agents.
+6. **ALWAYS instruct worker agents** to work on tasks by referencing the absolute path to the task description file.</code></pre></div>
+<p class="origin">Origen: <code>src/cli_agent_orchestrator/agent_store/code_supervisor.md:27-33</code> · Licencia: Apache-2.0</p>
+<ul><li><strong>Skills del PRODUCTO</strong>: 8 de protocolo (supervisor, worker, routing, sesión, memoria, aprendizaje, workflow) más las opcionales de UI y MCP Apps.</li><li><strong>Skills de desarrollo del repo</strong>: 5 (<code>cao-contributing</code>, <code>cao-plugin</code>, <code>cao-provider</code> y dos de plugins). Matiz: las 16 empaquetadas se siembran todas, así que también son cargables; la división es por propósito, no por mecanismo.</li><li>Discrepancias sin resolver: <code>entrypoint.sh</code> habla de 12 árboles de skills y hay 16; el prompt de <code>developer.md</code> promete el banner <code>[CAO Handoff]</code> y el código solo lo añade para Codex; no se encontró la variable de entorno de <code>ENABLE_WORKING_DIRECTORY</code>.</li><li>El bloque «Security Constraints» de los perfiles es solo texto; el control real son las allowlists.</li></ul></div><footer class="slide-src"><span>Fuente</span> cli-agent-orchestrator: src/cli_agent_orchestrator/agent_store/code_supervisor.md, src/cli_agent_orchestrator/agent_store/developer.md, src/cli_agent_orchestrator/utils/skills.py, docs/agent-plugins.md</footer></section>
+<section class="slide" id="d17" data-n="17"><header class="slide-head"><span class="slide-n">17</span><h2>CAO en Kubernetes: broker de privilegios mínimos (ejemplo de workshop)</h2></header><div class="slide-body has-diagram"><ul><li>Es un ejemplo de workshop en <code>examples/</code>, con partes marcadas «UNVERIFIED»: no es el modo por defecto.</li><li>El pod supervisor no crea pods: pide un Worker al broker; el broker no tiene <code>pods/exec</code> ni <code>secrets</code>.</li><li>La pasarela del broker reescribe <code>sender_id</code> y el contexto de memoria con los datos del lease: no se fía del Worker.</li><li>El LLM del Worker llama <code>complete_assignment</code>; la entrega por la pasarela y la liberación del lease las hace el código.</li><li>Los leases viven en memoria del broker: un reinicio pierde el registro. El barrido de huérfanos («orphan sweep») no se leyó a fondo.</li></ul>
+<div class="diagram"><pre class="mermaid">sequenceDiagram
+    participant S as "Supervisor pod"
+    participant B as "Broker"
+    participant K as "API Kubernetes"
+    participant W as "Worker pod"
+    S-&gt;&gt;B: "POST /workers con token del broker"
+    B-&gt;&gt;K: "crea Deployment y Service"
+    B--&gt;&gt;S: "lease: worker_id, target_host, release_token"
+    S-&gt;&gt;W: "espera /health y envia tarea via target_host"
+    W-&gt;&gt;W: "trabaja y llama herramientas"
+    W-&gt;&gt;B: "inbox via pasarela con release token"
+    B-&gt;&gt;S: "reenvia solo ese inbox con sender_id del lease"
+    W-&gt;&gt;B: "POST /workers/id/complete"
+    B-&gt;&gt;K: "borra Deployment y Service"
+    Note over B: "reaper cada 15 s marca terminated, failed o expired"</pre></div></div><footer class="slide-src"><span>Fuente</span> cli-agent-orchestrator: examples/cao-clusters/kubernetes/eks/broker.py, examples/cao-clusters/kubernetes/eks/rbac.yaml, src/cli_agent_orchestrator/mcp_server/server.py</footer></section>
+<section class="slide" id="d18" data-n="18"><header class="slide-head"><span class="slide-n">18</span><h2>gastown: arquitectura</h2></header><div class="slide-body has-diagram"><ul><li>Supervisión en capas: un daemon Go determinista y varios agentes LLM con rol (Mayor, Deacon, Boot, Witness, Refinery, Dogs).</li><li>El Mayor (LLM) coordina; <code>gt sling</code> (Go) despacha con guardas, locks y rollback.</li><li>Polecats: Workers en tmux y git worktree; estado compartido en Dolt (SQL versionado) con Beads.</li><li>Refinery: existe un motor Go de merge por lotes con bisección (<code>engineer.go</code>, <code>batch.go</code>), pero <strong>no tiene llamador fuera de tests</strong>: la fusión real la hace un agente LLM con <code>gt mq</code> (STUDY §12).</li><li>Diagrama completo: <a href="flows/gastown.architecture.html" target="_blank" rel="noopener">gastown.architecture.html</a></li></ul>
+<div class="diagram"><pre class="mermaid">flowchart TB
+    Human["Humano (Overseer)"]
+    Daemon["Daemon Go (determinista)"]
+    subgraph Town["Town ~/gt"]
+        Mayor["Mayor (LLM)"]
+        Deacon["Deacon (LLM, patrulla)"]
+        Boot["Boot (LLM efimero)"]
+        Dogs["Dogs (LLM)"]
+        Dolt[("Dolt + Beads")]
+    end
+    subgraph Rig["Rig (por proyecto)"]
+        Witness["Witness (LLM)"]
+        Refinery["Refinery (LLM + motor Go)"]
+        Polecat["Polecats (worktree git)"]
+        Crew["Crew"]
+    end
+    Human --&gt; Mayor
+    Mayor --&gt;|"gt sling"| Polecat
+    Daemon --&gt; Boot
+    Daemon --&gt; Deacon
+    Daemon --&gt; Witness
+    Daemon --&gt; Refinery
+    Boot --&gt; Deacon
+    Deacon --&gt; Witness
+    Deacon --&gt; Dogs
+    Witness --&gt; Polecat
+    Polecat --&gt;|"gt done: MR"| Refinery
+    Refinery --&gt;|"push"| Main["main"]
+    Mayor --- Dolt
+    Polecat --- Dolt</pre></div></div><footer class="slide-src"><span>Fuente</span> gastown: internal/daemon/daemon.go, internal/cmd/sling.go, internal/refinery/engineer.go, internal/templates/roles/refinery.md.tmpl</footer></section>
+<section class="slide" id="d19" data-n="19"><header class="slide-head"><span class="slide-n">19</span><h2>gastown: ciclo de vida de una tarea y estados del polecat</h2></header><div class="slide-body has-diagram"><ul><li><code>gt sling</code> arranca la sesión del polecat DESPUÉS de fijar su trabajo, para que <code>gt prime</code> ya lo vea al inyectar el contexto.</li><li>El polecat sigue el checklist de la fórmula <code>mol-polecat-work</code> y termina con <code>gt done</code> (push y petición de merge).</li><li><strong>Ciclo del polecat CONTRADICTORIO en la documentación</strong>: una doc dice «no idle reuse», la fórmula «Done means gone» y el código describe un polecat persistente que pasa a idle. El diagrama de estados es una reconstrucción, no un hecho.</li><li>Secuencia completa: <a href="flows/gastown.sequence.html" target="_blank" rel="noopener">gastown.sequence.html</a></li></ul>
+<div class="diagram"><pre class="mermaid">sequenceDiagram
+    participant H as Humano
+    participant M as Mayor (LLM)
+    participant S as gt sling (Go)
+    participant P as Polecat (LLM)
+    participant W as Witness
+    participant R as Refinery
+    participant G as main
+    H-&gt;&gt;M: pide una tarea
+    M-&gt;&gt;S: bd create + gt sling bead rig
+    S-&gt;&gt;S: guardas, spawn worktree, wisp mol-polecat-work
+    S-&gt;&gt;P: hook + sesion tmux (gt prime en SessionStart)
+    P-&gt;&gt;P: checklist de la formula
+    P-&gt;&gt;W: gt done: push, MR bead, POLECAT_DONE
+    W-&gt;&gt;R: MERGE_READY (evento + nudge)
+    W-&gt;&gt;M: hueco libre (slot open)
+    R-&gt;&gt;R: rebase, tests, gates
+    R-&gt;&gt;G: merge no-ff y push
+    R-&gt;&gt;W: MERGED
+    W-&gt;&gt;P: limpieza del polecat</pre></div>
+<div class="diagram"><pre class="mermaid">stateDiagram-v2
+    [*] --&gt; Spawning: gt sling crea bead y worktree
+    Spawning --&gt; Working: sesion tmux arranca
+    Spawning --&gt; Stalled: guarda de 5 min caducada
+    Working --&gt; Done: gt done COMPLETED
+    Working --&gt; Stalled: sesion muerta con hook abierto
+    Working --&gt; Escalated: gt done ESCALATED
+    Done --&gt; Zombie: cleanup de gt done falla
+    Stalled --&gt; Working: Witness reinicia o redispatch
+    Done --&gt; [*]: sesion retirada, identidad persiste
+    Zombie --&gt; [*]: Witness limpia</pre></div></div><footer class="slide-src"><span>Fuente</span> gastown: internal/cmd/sling.go, internal/cmd/prime.go, docs/concepts/polecat-lifecycle.md, internal/witness/handlers.go</footer></section>
+<section class="slide" id="d20" data-n="20"><header class="slide-head"><span class="slide-n">20</span><h2>gastown: prompt clave y skills</h2></header><div class="slide-body"><div class="codewrap"><pre><code>User request → bd create "..." → {{ cmd }} sling &lt;bead-id&gt; &lt;rig&gt;
+(...)
+If you're unsure, sling it. Slinging is always safe; doing it yourself eats
+context you can't get back.
+### The Solo Artist trap
+Claude's instinct is "I can do this, so I will." (...)
+**Anti-pattern**: Doing everything yourself while the polecat pool sits idle.</code></pre></div>
+<p class="origin">Origen: <code>internal/templates/roles/mayor.md.tmpl:44, 63-64, 66, 68, 73</code> (líneas no contiguas) · Licencia: MIT</p>
+<ul><li><strong>Skills de desarrollo del repo</strong>: 4 en <code>.claude/skills</code> (<code>crew-commit</code>, <code>pr-sheriff</code>, <code>pr-list</code>, <code>ghi-list</code>); no se encontró que se provisionen a los polecats.</li><li><strong>Del PRODUCTO</strong>: no son skills sino 53 fórmulas TOML embebidas en el binario y tres slash commands provisionados (<code>done</code>, <code>handoff</code>, <code>review</code>).</li><li>Contradicción resuelta en la 2.ª pasada: la plantilla del Refinery dice que decide el LLM, «not Go code», y el motor Go de merge existe pero nadie lo llama en producción.</li></ul></div><footer class="slide-src"><span>Fuente</span> gastown: internal/templates/roles/mayor.md.tmpl, internal/templates/roles/refinery.md.tmpl, internal/formula/embed.go, .claude/skills</footer></section>
+<section class="slide" id="d21" data-n="21"><header class="slide-head"><span class="slide-n">21</span><h2>gastown: la cadena de vigilancia</h2></header><div class="slide-body has-diagram"><ul><li>Cada tick del daemon: si hay E-stop o apagado, no gestiona agentes.</li><li>Boot (sesión LLM nueva por tick) decide si despertar al Deacon; se salta si el Deacon está sano y sin trabajo, y degrada a triage mecánico sin LLM.</li><li>La detección de atascos de los agentes <strong>no es automática</strong>: las primitivas (ping con 3 fallos y enfriamiento de 5 min, <code>gt deacon health-check</code> y <code>force-kill</code>) existen, pero nadie las invoca; el Deacon, un LLM, decide con su prompt («you decide the thresholds»). Lo único automático y determinista es el daemon sobre el propio Deacon: aviso entre 5 y 20 min sin heartbeat y kill pasados 20 min. El re-despacho (<code>redispatch.go</code>) no se verificó (STUDY §12).</li><li>Intervalo del heartbeat: 3 min por defecto (<code>internal/config/operational.go:48</code>), configurable.</li></ul>
+<div class="diagram"><pre class="mermaid">flowchart TB
+    Tick["Daemon: tick de heartbeat"]
+    Gate{"estop activo o shutdown?"}
+    Skip["No gestiona agentes"]
+    Idle{"Deacon fresco y sin trabajo activo?"}
+    Boot["Boot LLM: observar, decidir, actuar"]
+    Degraded["Triage mecanico sin LLM"]
+    Deacon["Deacon: mol-deacon-patrol"]
+    HB["checkDeaconHeartbeat (red de seguridad)"]
+    Witness["Witness por rig"]
+    Polecat["Polecat"]
+    DPol["Daemon: checkPolecatHealth y GUPP"]
+    Tick --&gt; Gate
+    Gate --&gt;|"si"| Skip
+    Gate --&gt;|"no"| Idle
+    Idle --&gt;|"si"| HB
+    Idle --&gt;|"no"| Boot
+    Boot --&gt;|"start, wake, nudge, interrupt"| Deacon
+    Boot -.-&gt;|"GT_DEGRADED o sin tmux"| Degraded
+    HB --&gt; Deacon
+    Deacon --&gt;|"health-scan, zombie-scan"| Witness
+    Witness --&gt;|"peek, nudge, cleanup"| Polecat
+    Tick --&gt; DPol
+    DPol --&gt;|"sesion muerta con hook"| Witness</pre></div></div><footer class="slide-src"><span>Fuente</span> gastown: internal/daemon/daemon.go, internal/daemon/types.go, internal/deacon/stuck.go, internal/deacon/redispatch.go</footer></section>
+<section class="slide" id="d22" data-n="22"><header class="slide-head"><span class="slide-n">22</span><h2>Comparativa de capacidades (nueve repos)</h2></header><div class="slide-body"><div class="tablewrap"><table><thead><tr><th>Repo</th><th>Quién coordina</th><th>Aislamiento del Worker</th><th>Estado</th><th>Watchdog</th><th>Aceptación verificada por código</th></tr></thead><tbody><tr><td>dsh</td><td>Router LLM + gate determinista</td><td>worktree, sin sandbox</td><td>SQLite + outbox</td><td>❌ no como componente</td><td>❌</td></tr><tr><td>cc-super-agent</td><td>Router LLM, todo en prompt</td><td>dir del proyecto, sin sandbox</td><td>Markdown</td><td>⚠️ LLM por cron, solo avisa</td><td>❌</td></tr><tr><td>LofiSu</td><td>Router con fast path en código</td><td>⚠️ solo macOS y Linux</td><td>SQLite</td><td>✅ en código</td><td>⚠️ regex</td></tr><tr><td>super-super-harness</td><td>Claude Code con herramientas MCP + reglas</td><td>worktree, sin sandbox</td><td>SQLite WAL</td><td>⚠️ repartido</td><td>⚠️ origen, no resultado</td></tr><tr><td>deer-flow</td><td>lead único (no Router/Worker)</td><td>⚠️ <code>local</code> flojo</td><td>SQL + checkpoints</td><td>⚠️ repartido</td><td>✅</td></tr><tr><td>agent-orchestrator</td><td>agente LLM + enrutado Go</td><td>worktree; sin sandbox propio (solo limpia contenedores)</td><td>SQLite WAL</td><td>⚠️ solo vida; <code>no_signal</code> es una etiqueta</td><td>⚠️ estado del PR derivado de hechos de SCM</td></tr><tr><td>agent-swarm</td><td>lead LLM + enrutado previo</td><td>Docker; endurecimiento apagado por defecto</td><td>SQLite</td><td>✅ en código (A y B remedian; C solo registra)</td><td>❌ autoinforme en <code>/finish</code></td></tr><tr><td>CAO</td><td>supervisor LLM con MCP</td><td>sin sandbox local; pods desechables en K8s (ejemplo)</td><td>SQLite + ficheros</td><td>⚠️ regex sobre pantalla</td><td>❌ «falsa victoria» sin mitigar</td></tr><tr><td>gastown</td><td>Mayor LLM + despacho Go</td><td>worktree + tmux; sin sandbox (el proxy mTLS no se usa por defecto)</td><td>Dolt</td><td>⚠️ daemon (código) y agentes LLM</td><td>⚠️ merge por agente LLM; el motor Go no se llama</td></tr></tbody></table></div>
+<ul><li>✅ en código · ⚠️ parcial o solo por prompt · ❌ no existe (buscado en el código) · ❓ no encontrado con cobertura baja: no equivale a «no hay».</li></ul></div><footer class="slide-src"><span>Fuente</span> estudio: TABLAS.md §3-§5; STUDY.md §10.1 y §10.2</footer></section>
+<section class="slide" id="d23" data-n="23"><header class="slide-head"><span class="slide-n">23</span><h2>El patrón nuevo: coordinador LLM más enrutado determinista en código</h2></header><div class="slide-body"><ul><li>El coordinador es un agente LLM completo, no un clasificador barato.</li><li>El LLM decide qué trabajo existe; el código decide a quién llega y cuándo.</li><li>agent-orchestrator: reacciones a CI, review y conflictos en <code>lifecycle/reactions.go</code>.</li><li>gastown: <code>gt sling</code> y el daemon. agent-swarm: elegibilidad por rol y capacidades (según runbook; el código de la elegibilidad no se leyó, el del watchdog sí).</li><li>Matiz de la 2.ª pasada: en gastown parte de lo que parecía código (detección de atascos, cola de merge) no tiene llamador y depende del prompt. Conviene leer los llamadores y no solo las funciones.</li><li>Antecedente: el gate determinista de dsh. Lo contrario: cc-super-agent, donde todo vive en el prompt.</li></ul></div><footer class="slide-src"><span>Fuente</span> estudio: STUDY.md §10.2; agent-orchestrator: backend/internal/lifecycle/reactions.go; gastown: internal/cmd/sling.go</footer></section>
+<section class="slide" id="d24" data-n="24"><header class="slide-head"><span class="slide-n">24</span><h2>Huecos que nadie cubre (en lo leído)</h2></header><div class="slide-body"><ul><li>Aislamiento real y portable del Worker: hay Docker y K8s, pero con endurecimiento opcional y nada para Windows nativo.</li><li>Defensa técnica contra prompt injection: en todos es textual («esto es dato, no instrucción»).</li><li>Aceptación del resultado verificada por código: solo deer-flow, fuera del linaje Router/Worker.</li><li>Control de coste por tarea: agent-swarm aplica presupuestos diarios en USD al reclamar y gastown trae <code>max_polecats</code> apagado por defecto; nadie pone tope por tarea ni por tokens.</li><li>Evidencia de que la arquitectura dual compensa: el benchmark citado es sintético y de terceros; nadie lo midió con código real.</li><li>Con cobertura del 3 al 45 %, «nadie» significa «no lo encontramos».</li></ul></div><footer class="slide-src"><span>Fuente</span> estudio: STUDY.md §6 y §10.4; REFS.md §5</footer></section>
+<section class="slide" id="d25" data-n="25"><header class="slide-head"><span class="slide-n">25</span><h2>Ideas que merece la pena copiar</h2></header><div class="slide-body"><div class="tablewrap"><table><thead><tr><th>Idea</th><th>De dónde</th></tr></thead><tbody><tr><td>LLM propone, código dispone (gate y validación de la decisión)</td><td>dsh</td></tr><tr><td>Cola por sesión con <code>flock</code> y fusión de mensajes a un Worker ocupado</td><td>cc-super-agent</td></tr><tr><td>Hecho durable, efecto idempotente, acuse al final; «una sonda fallida no es muerte»</td><td>agent-orchestrator</td></tr><tr><td>Identidad fijada por el lanzador y techo de delegación guardado en la fila del padre</td><td>CAO</td></tr><tr><td>Broker que reescribe la identidad desde el lease (ejemplo de workshop)</td><td>CAO</td></tr><tr><td>Despacho idempotente con rollback; arrancar el Worker solo tras fijar su trabajo</td><td>gastown</td></tr></tbody></table></div></div><footer class="slide-src"><span>Fuente</span> estudio: STUDY.md §10.3; study/flows/*.md §7</footer></section>
+<section class="slide" id="d26" data-n="26"><header class="slide-head"><span class="slide-n">26</span><h2>Límites de confianza</h2></header><div class="slide-body"><div class="tablewrap"><table><thead><tr><th>Repo</th><th>Cobertura de lectura</th></tr></thead><tbody><tr><td>dsh-superagent-prototype</td><td>Alta: docs y código del flujo; sin leer <code>src/client</code>, tests, <code>store.ts</code></td></tr><tr><td>cc-super-agent</td><td>Alta: repo casi entero (35 ficheros)</td></tr><tr><td>super-super-harness</td><td>Alta (primera ronda)</td></tr><tr><td>LofiSu</td><td>Media: muestreo</td></tr><tr><td>deer-flow</td><td>Media-baja: muestreo</td></tr><tr><td>agent-orchestrator</td><td>~3-4 % de los ficheros; 2.ª pasada con ~50 ficheros de lifecycle, Windows y SQLite</td></tr><tr><td>agent-swarm</td><td>~12-15 % de <code>src/</code> línea a línea; watchdog, auth y presupuestos verificados en código</td></tr><tr><td>cli-agent-orchestrator</td><td>~15-20 % del código relevante (auth, API, orquestación, EKS)</td></tr><tr><td>gastown</td><td>~40-45 % de lo relevante al flujo (nota de flujos); ~15-20 % en la primera ronda</td></tr></tbody></table></div>
+<ul><li>Nada se ejecutó. Las citas <code>ruta:línea</code> salen de las notas: 807 comprobadas mecánicamente y 72 contrastadas con el código, ninguna contradicha (STUDY §0).</li><li>Algunas líneas de CAO llegaron comprimidas y pueden estar desplazadas.</li></ul></div><footer class="slide-src"><span>Fuente</span> estudio: STUDY.md §0 y §10; study/flows/*.md (párrafo «Cobertura»)</footer></section>
+<section class="slide" id="d27" data-n="27"><header class="slide-head"><span class="slide-n">27</span><h2>Anexo: referencias ruta:línea</h2></header><div class="slide-body"><p>Rutas relativas a <code>references/&lt;repo&gt;/</code>. Detalle y contexto en <code>study/flows/&lt;repo&gt;.md</code>.</p>
+<ul><li><strong>D5 dsh, arquitectura</strong>: <code>src/sources/github.ts:144, 232</code>; <code>src/app/passes.ts:28, 34, 63-68</code>; <code>src/core/engine.ts:19-23</code>; <code>src/policy.ts:191-212</code>; <code>src/app/effects.ts:60-87</code>; <code>src/app/assessment.ts:37-45</code>; <code>src/app/sessions.ts:138-155, 232-269</code>; <code>src/executor/dsh.ts:263-283, 424-455</code>; <code>src/app/outbox.ts:20-50</code>; permisos <code>src/app/sessions.ts:152</code>.</li><li><strong>D6 dsh, ciclo</strong>: <code>src/sources/github.ts:144, 228-232</code>; <code>src/core/intake.ts:19-60, 34-52</code>; <code>src/core/evals.ts:71-106, 118, 131-153, 152, 306-316</code>; <code>prompts/dispatch.md:5-6, 16-22</code>; <code>prompts/admission.md:1, 67</code>; <code>src/app/tools/main.ts:127, 203-215, 224-237</code>; <code>src/core/tickets.ts:37-50</code>; <code>prompts/work.md:8-12, 21-29</code>; <code>src/app/tools/executor.ts:90-98</code>; <code>src/core/assignments.ts:99-133</code>; <code>src/app/notices.ts:121-128</code>; <code>src/core/engine.ts:62-65, 135</code>; <code>src/app/outbox.ts:31-50</code>.</li><li><strong>D7 dsh, prompt y skills</strong>: <code>prompts/shared.md:5-7</code>; <code>skills/dsh-superagent-github/SKILL.md</code>, <code>skills/dsh-superagent-feishu/SKILL.md</code>; <code>src/app/skill-files.ts:20-22</code>; <code>src/app/prompts.ts:146-148</code>; <code>src/app/sessions.ts:263, 314-327</code>; plugin <code>agent-instructions</code> en <code>cordis.patch.yml:32-35, 133-136</code> frente a <code>docs/004-prompts.md:61</code>.</li><li><strong>D8-D10 cc-super-agent</strong>: <code>web/server.mjs:364-369</code>; <code>AGENTS.md:9, 23, 27, 35, 50-51, 103, 107, 138, 211, 213</code>; <code>CLAUDE.md:1</code>; <code>router/loop.sh:19-27</code>; <code>bin/dispatch:54-76, 77-91, 107-140, 143-152</code>; <code>templates/brief.md:7-19</code>; <code>templates/worker-rules.md:9-18</code>; <code>watchdog/run.sh:21-34, 52-56</code>; <code>watchdog/prompt.md:3, 61, 63</code>.</li><li><strong>D11 agent-orchestrator, arquitectura</strong>: <code>backend/internal/observe/scm/observer.go:32, 759</code>; <code>backend/internal/observe/reaper/reaper.go:23</code>; <code>backend/internal/daemon/lifecycle_wiring.go:102, 511-611, 627-663</code>; <code>backend/internal/daemon/daemon.go:392, 832</code>; <code>backend/internal/lifecycle/manager.go:324</code>; <code>backend/internal/session_manager/manager.go:5856</code>.</li><li><strong>D12 agent-orchestrator, ciclo y estados</strong>: <code>observer.go:32, 454, 482-487, 604-624, 705-750, 751-759, 767, 1754-1791</code>; <code>backend/internal/lifecycle/reactions.go:87-118, 142-144, 158, 188-206, 476-481, 856-890, 1062-1068, 1078, 1090, 1100-1112</code>; <code>backend/internal/sessionguard/guard.go:154-162, 428-446</code>; <code>lifecycle/manager.go:479-487, 519-520</code>; <code>reaper.go:1-7, 32-35, 227-241</code>; <code>docs/architecture.md:56, 930-944</code>.</li><li><strong>D13 agent-orchestrator, prompt y skills</strong>: <code>backend/internal/session_manager/prompt.go:243, 245, 250, 253, 260</code>; <code>backend/internal/skillassets/skillassets.go:1-15, 28, 41-46</code>; <code>session_manager/manager.go:6858-6901</code>; <code>backend/internal/adapters/chatdriver/codexappserver/driver.go:790-802</code>.</li><li><strong>D14 CAO, arquitectura</strong>: <code>src/cli_agent_orchestrator/utils/orchestration.py:1620, 2221, 2915, 3079</code>; <code>src/cli_agent_orchestrator/services/agent_step.py:436</code>; <code>src/cli_agent_orchestrator/services/inbox_service.py:175</code>; <code>src/cli_agent_orchestrator/clients/tmux.py:1461, 1655, 1838</code>.</li><li><strong>D15 CAO, handoff y assign</strong>: <code>agent_store/code_supervisor.md:28-33, 37-50</code>; <code>mcp_server/server.py:339-460, 447-449, 1607-1685</code>; <code>utils/orchestration.py:2235-2244, 2336-2346, 2373-2406, 2443-2473, 2960-2979, 3009-3015</code>; <code>services/agent_step.py:171-220, 614-634, 756, 807, 833, 850, 875-897, 899-935</code>; <code>services/inbox_service.py:175-209</code>; <code>services/delegation_callback_service.py:49-73</code>; detector de fin de turno: <code>examples/cao-clusters/kubernetes/eks/README.md:45-53</code>.</li><li><strong>D16 CAO, prompt y skills</strong>: <code>agent_store/code_supervisor.md:27-33, 61-65</code>; <code>docs/agent-plugins.md:592-595</code>; <code>cli/commands/init.py:112-139</code>; <code>utils/skills.py:178-200</code>; banner <code>utils/orchestration.py:1389-1414</code>; <code>developer.md</code> y <code>reviewer.md</code> sin líneas (posible desplazamiento en la lectura); <code>entrypoint.sh:55-56</code>.</li><li><strong>D17 CAO en K8s</strong>: <code>eks/broker.py:706-716, 796-813, 1122-1149, 1274-1334, 1357-1366</code>; <code>eks/rbac.yaml:62-90</code>; <code>eks/README.md:13-16</code>; <code>mcp_server/server.py:858-860, 890-916, 920-928, 1016-1055</code>.</li><li><strong>D18 gastown, arquitectura</strong>: <code>internal/daemon/daemon.go:853-1014</code>; <code>internal/cmd/sling.go:215, 606-636</code>; <code>internal/cmd/sling_dispatch.go:97-126, 235-284</code>; <code>internal/refinery/engineer.go:504-767</code>; <code>internal/refinery/batch.go:202-325</code>; <code>internal/cmd/refinery.go:626, 653</code>; <code>internal/templates/roles/refinery.md.tmpl:84-86</code>.</li><li><strong>D19 gastown, ciclo y estados</strong>: <code>mayor.md.tmpl:38-64, 326-339</code>; <code>sling.go:331-369, 878-1010, 1013-1038, 1098-1110</code>; <code>internal/hooks/templates/claude/settings-autonomous.json:107-116</code>; <code>internal/cmd/prime.go:191-243</code>; <code>mol-polecat-work.formula.toml:19-22, 58, 514</code>; <code>internal/cmd/done.go:668-700</code>; <code>internal/witness/handlers.go:148-151, 153-203, 361-364</code>; <code>docs/concepts/polecat-lifecycle.md:12-22, 41</code>; <code>daemon.go:977-980, 2671-2683, 2696-2721</code>.</li><li><strong>D20 gastown, prompt y skills</strong>: <code>internal/templates/roles/mayor.md.tmpl:44, 63-64, 66, 68, 73</code>; <code>internal/formula/embed.go:16</code>; <code>internal/deps/claude.go:14</code>; <code>internal/templates/commands/bodies/{done,handoff,review}.md</code> vía <code>provision.go:14</code>.</li><li><strong>D21 gastown, vigilancia</strong>: <code>daemon.go:838-843, 857-1000, 913-918, 1337-1383, 1433-1459</code>; <code>internal/daemon/types.go:41</code>; <code>internal/deacon/stuck.go:19-21</code>; <code>internal/deacon/redispatch.go:19-26</code>; <code>docs/concepts/heartbeats.md</code>.</li><li><strong>Segunda pasada (STUDY §12)</strong>: gastown <code>internal/cmd/deacon.go:865-1086</code>, <code>internal/daemon/daemon.go:1584-1635</code>, <code>internal/refinery/batch.go:211</code>, <code>internal/cmd/refinery.go:627-869</code>; agent-orchestrator <code>backend/internal/lifecycle/reactions.go:848-854, 1062-1066</code>, <code>backend/internal/domain/status.go:25-29</code>; CAO <code>src/cli_agent_orchestrator/security/auth.py:121-131</code>, <code>src/cli_agent_orchestrator/services/agent_step.py:247-248, 302-340</code>.</li><li><strong>D22-D26 comparativas</strong>: sin <code>ruta:línea</code> propias; salen de <code>STUDY.md</code>, <code>TABLAS.md</code>, <code>REFS.md</code> y de la sección 7 de cada nota de flujos.</li></ul></div></section>
+</main>
+<p class="foot">Estudio de solo lectura del 2026-11-21: no se ejecutó nada de los repositorios. Los diagramas HTML enlazados salen de archify. Detalle y límites de confianza en <a href="#d26">la diapositiva 26</a> y en el anexo.</p>
+<script>
+(function(){
+  var slides=[].slice.call(document.querySelectorAll('.slide'));
+  var sel=document.getElementById('goto'), bRead=document.getElementById('m-read'), bPres=document.getElementById('m-pres'), bPrev=document.getElementById('prev'), bNext=document.getElementById('next');
+  var mode='read', cur=0;
+  function idxFromHash(){ var m=(location.hash||'').match(/^#d(\d+)$/); if(!m) return 0; var n=+m[1]; for(var i=0;i<slides.length;i++){ if(+slides[i].getAttribute('data-n')===n) return i; } return 0; }
+  function show(i, fromHash){
+    cur=Math.max(0,Math.min(slides.length-1,i));
+    slides.forEach(function(s,k){ s.classList.toggle('is-current',k===cur); });
+    sel.value=String(cur); bPrev.disabled=(cur===0); bNext.disabled=(cur===slides.length-1);
+    var id='d'+slides[cur].getAttribute('data-n');
+    if(location.hash!=='#'+id){ try{ history.replaceState(null,'','#'+id); }catch(e){ location.hash=id; } }
+    if(mode==='read'){ slides[cur].scrollIntoView({block:'start'}); } else { window.scrollTo(0,0); }
+  }
+  function setMode(m){ mode=m; document.body.classList.toggle('present',m==='present'); bRead.setAttribute('aria-pressed',String(m==='read')); bPres.setAttribute('aria-pressed',String(m==='present')); show(cur); }
+  sel.addEventListener('change',function(){ show(+sel.value); });
+  bPrev.addEventListener('click',function(){ show(cur-1); });
+  bNext.addEventListener('click',function(){ show(cur+1); });
+  bRead.addEventListener('click',function(){ setMode('read'); });
+  bPres.addEventListener('click',function(){ setMode('present'); });
+  document.addEventListener('keydown',function(e){ if(e.target&&/INPUT|SELECT|TEXTAREA/.test(e.target.tagName)) return; if(e.key==='ArrowRight'||e.key==='PageDown'){ if(mode==='present'){ e.preventDefault(); show(cur+1);} } else if(e.key==='ArrowLeft'||e.key==='PageUp'){ if(mode==='present'){ e.preventDefault(); show(cur-1);} } });
+  window.addEventListener('hashchange',function(){ var i=idxFromHash(); if(i!==cur){ cur=i; slides.forEach(function(s,k){ s.classList.toggle('is-current',k===cur); }); sel.value=String(cur); bPrev.disabled=(cur===0); bNext.disabled=(cur===slides.length-1); if(mode==='read') slides[cur].scrollIntoView({block:'start'}); } });
+  slides.forEach(function(s,k){ s.classList.toggle('is-current',k===0); });
+  var h=idxFromHash(); cur=h; sel.value=String(cur); bPrev.disabled=(cur===0); bNext.disabled=(cur===slides.length-1);
+  slides[cur].classList.add('is-current');
+  if(location.hash && h>0){ setTimeout(function(){ slides[cur].scrollIntoView({block:'start'}); },400); }
+})();
+</script>

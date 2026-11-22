@@ -1,0 +1,14 @@
+stateDiagram-v2
+    [*] --> Spawning: Spawn
+    Spawning --> Active: MarkSpawned
+    Active --> Idle: hook idle
+    Idle --> Active: hook prompt submit
+    Active --> WaitingInput: espera input
+    Active --> Blocked: permiso pendiente
+    WaitingInput --> Active: usuario responde
+    Blocked --> Active: usuario decide
+    Active --> Exited: runtime vivo y workload muerto
+    Exited --> Active: Resume
+    Active --> Terminated: Kill o PR fusionado o runtime muerto
+    Exited --> Terminated: runtime muerto sin actividad reciente
+    Terminated --> [*]

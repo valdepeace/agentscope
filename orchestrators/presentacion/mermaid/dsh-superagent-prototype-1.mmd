@@ -1,0 +1,15 @@
+flowchart LR
+  GH["GitHub / Feishu"] --> SRC["Sources (poll)"]
+  SRC --> PAS["Passes cada 2 s"]
+  PAS --> ENG["Engine (intake, evals, tickets)"]
+  ENG <--> DB[("SQLite + cola de effects")]
+  ENG --> POL["Policy gate"]
+  ENG --> ASR["MasterAssessor"]
+  ASR --> RTR["Sesion Router LLM"]
+  RTR -->|"orchestrator_route / eval_decide"| ENG
+  ENG --> EXE["DshExecutor"]
+  EXE --> WRK["Sesion Worker LLM"]
+  WRK -->|"orchestrator_report / ack"| ENG
+  ENG -->|"relay"| RTR
+  RTR -->|"orchestrator_reply"| OUT["Outbox + Channel"]
+  OUT --> GH

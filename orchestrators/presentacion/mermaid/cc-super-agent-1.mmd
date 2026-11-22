@@ -1,0 +1,28 @@
+flowchart LR
+  User["Usuario"]
+  Web["Web UI server.mjs"]
+  Tmux["tmux ccsa-router"]
+  Loop["router/loop.sh"]
+  Router["Router (claude interactivo)"]
+  Disp["bin/dispatch"]
+  Worker["Worker (claude -p)"]
+  Rules["templates/worker-rules.md"]
+  Runs[".runs/ + pending/"]
+  Rec["INDEX.md tasks/ projects/"]
+  Cron["cron 15 min"]
+  Dog["watchdog/run.sh + prompt.md"]
+  User --> Web
+  User --> Tmux
+  Web --> Tmux
+  Loop --> Router
+  Tmux --> Loop
+  Router --> Rec
+  Router --> Disp
+  Disp --> Runs
+  Disp --> Worker
+  Rules --> Worker
+  Worker --> Runs
+  Cron --> Dog
+  Dog --> Runs
+  Dog --> Rec
+  Dog --> Router

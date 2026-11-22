@@ -1,0 +1,11 @@
+stateDiagram-v2
+    [*] --> Spawning: gt sling crea bead y worktree
+    Spawning --> Working: sesion tmux arranca
+    Spawning --> Stalled: guarda de 5 min caducada
+    Working --> Done: gt done COMPLETED
+    Working --> Stalled: sesion muerta con hook abierto
+    Working --> Escalated: gt done ESCALATED
+    Done --> Zombie: cleanup de gt done falla
+    Stalled --> Working: Witness reinicia o redispatch
+    Done --> [*]: sesion retirada, identidad persiste
+    Zombie --> [*]: Witness limpia

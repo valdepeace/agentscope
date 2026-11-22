@@ -1,0 +1,23 @@
+flowchart LR
+    SUP["cao-supervisor, StatefulSet x1, perfil code_supervisor"]
+    BRK["cao-worker-broker, Deployment x1, sin agentes"]
+    K8S["API de Kubernetes"]
+    W1["cao-worker-id1, Deployment x1, CAO_MAX_TERMINALS=1"]
+    W2["cao-worker-id2, Deployment x1"]
+    LEASE[("Leases en memoria del broker, creating, leased, completed, released, terminated, expired, failed")]
+    EBS[("EBS: estado y memoria durable")]
+    EFS[("EFS: workspace compartido")]
+
+    SUP -->|"POST /workers + X-CAO-Broker-Token"| BRK
+    BRK -->|"create Deployment + Service"| K8S
+    K8S --> W1
+    K8S --> W2
+    BRK --- LEASE
+    SUP -->|"POST tarea via target_host (Service)"| W1
+    W1 -->|"callback y memoria con release token"| BRK
+    BRK -->|"solo 5 rutas: inbox y memoria"| SUP
+    W1 -->|"POST /workers/id/complete"| BRK
+    SUP --- EBS
+    SUP --- EFS
+    W1 --- EFS
+    BRK -.->|"reaper cada 15 s"| LEASE

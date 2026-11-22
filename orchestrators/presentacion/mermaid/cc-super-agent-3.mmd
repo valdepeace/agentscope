@@ -1,0 +1,26 @@
+mindmap
+  root((cc-super-agent))
+    Dominio
+      Task igual a pieza de trabajo
+      Brief con la peticion verbatim
+      Project con su ruta
+    Control
+      Router solo clasifica y despacha
+      Dispatch en Bash
+      Pause global y hold por tarea
+    Aislamiento
+      Worker en el dir del proyecto
+      Session id fijo por tarea
+      Maximo 3 Workers con flock
+    Estado
+      Markdown INDEX tasks projects
+      .runs con pending
+      Registrar primero y luego actuar
+    Seguridad
+      Permisos del usuario sin ampliar
+      Watchdog con lista de herramientas
+      Sin sandbox ni defensa de inyeccion
+    Ideas propias
+      Watchdog LLM por cron con prefiltro
+      Web sobre tmux y transcripts
+      Twin del juicio del usuario
